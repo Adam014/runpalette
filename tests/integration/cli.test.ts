@@ -97,4 +97,72 @@ describe("Runpalette CLI", () => {
     expect(payload.error.hint).toContain("--cwd");
     expect(result.stderr).toBe("");
   });
+
+  test("applies config aliases and refuses protected execution without explicit approval", async () => {
+    const root = await createProject({
+      manifest: {
+        name: "protected-app",
+        packageManager: "npm@11",
+        scripts: { release: "node -e \"console.log('published')\"" },
+      },
+      files: {
+        "runpalette.json": JSON.stringify({
+          schemaVersion: 1,
+          commands: {
+            release: {
+              aliases: ["ship"],
+              confirm: "This publishes the package.",
+            },
+          },
+        }),
+      },
+    });
+    temporaryProjects.push(root);
+
+    const refused = run(["run", "ship", "--cwd", root, "--non-interactive"]);
+    expect(refused.exitCode).toBe(2);
+    expect(refused.stderr).toContain("requires confirmation");
+
+    const approved = run(["run", "ship", "--cwd", root, "--non-interactive", "--yes"]);
+    expect(approved.exitCode).toBe(0);
+    expect(approved.stdout).toContain("published");
+  });
+
+  test("requires a workspace for ambiguous scripts and executes the selected package", async () => {
+    const root = await createProject({
+      manifest: {
+        name: "workspace-root",
+        packageManager: "npm@11",
+        workspaces: ["packages/*"],
+        scripts: {},
+      },
+      files: {
+        "packages/a/package.json": JSON.stringify({
+          name: "@acme/a",
+          scripts: { identify: "node -e \"console.log('workspace-a')\"" },
+        }),
+        "packages/b/package.json": JSON.stringify({
+          name: "@acme/b",
+          scripts: { identify: "node -e \"console.log('workspace-b')\"" },
+        }),
+      },
+    });
+    temporaryProjects.push(root);
+
+    const ambiguous = run(["run", "identify", "--cwd", root, "--non-interactive"]);
+    expect(ambiguous.exitCode).toBe(2);
+    expect(ambiguous.stderr).toContain("exists in multiple workspaces");
+
+    const selected = run([
+      "run",
+      "identify",
+      "--cwd",
+      root,
+      "--workspace",
+      "@acme/b",
+      "--non-interactive",
+    ]);
+    expect(selected.exitCode).toBe(0);
+    expect(selected.stdout).toContain("workspace-b");
+  });
 });

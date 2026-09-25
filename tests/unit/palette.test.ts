@@ -7,21 +7,36 @@ function catalog(): CommandCatalog {
   const dev = {
     id: "package:dev",
     name: "dev",
+    label: "dev",
+    aliases: [],
     script: "vite --host 0.0.0.0",
     group: "develop" as const,
+    order: 0,
+    safety: { confirmationRequired: false },
+    workspace: { name: "app", path: ".", root: "/workspace/app", isRoot: true },
     source: { kind: "package.json" as const, path: "/workspace/app/package.json" },
   };
   const testUnit = {
     id: "package:test:unit",
     name: "test:unit",
+    label: "test:unit",
+    aliases: [],
     script: "vitest run",
     group: "quality" as const,
+    order: 1,
+    safety: { confirmationRequired: false },
+    workspace: { name: "app", path: ".", root: "/workspace/app", isRoot: true },
     source: { kind: "package.json" as const, path: "/workspace/app/package.json" },
   };
   const commands = [dev, testUnit];
   return {
     schemaVersion: 1,
-    project: { name: "app", root: "/workspace/app", manifestPath: "/workspace/app/package.json" },
+    project: {
+      name: "app",
+      root: "/workspace/app",
+      manifestPath: "/workspace/app/package.json",
+      workspaceCount: 0,
+    },
     packageManager: {
       name: "pnpm",
       evidence: { source: "lockfile", detail: "pnpm-lock.yaml" },
@@ -86,7 +101,11 @@ class Sink {
 
 describe("renderPalette", () => {
   test("shows hierarchy, selected command, exact action, and implementation", () => {
-    const rendered = renderPalette(catalog(), { query: "", selected: 0, help: false }, terminal);
+    const rendered = renderPalette(
+      catalog(),
+      { query: "", selected: 0, help: false, groupIndex: 0 },
+      terminal,
+    );
 
     expect(rendered).toContain("RUNPALETTE project commands, made visible");
     expect(rendered).toContain("START & DEVELOP");
@@ -98,7 +117,7 @@ describe("renderPalette", () => {
   test("selects the first visible command rather than the first manifest entry", () => {
     const rendered = renderPalette(
       manifestOrderDiffersFromVisualOrder(),
-      { query: "", selected: 0, help: false },
+      { query: "", selected: 0, help: false, groupIndex: 0 },
       terminal,
     );
 
@@ -109,7 +128,7 @@ describe("renderPalette", () => {
   test("fits every visible line inside a very narrow terminal", () => {
     const rendered = renderPalette(
       catalog(),
-      { query: "", selected: 0, help: false },
+      { query: "", selected: 0, help: false, groupIndex: 0 },
       { ...terminal, unicode: false, columns: 24, rows: 12 },
     );
     const cleaned = rendered.replaceAll("\u001B[K", "");
@@ -123,12 +142,51 @@ describe("renderPalette", () => {
   test("renders a useful empty search state", () => {
     const rendered = renderPalette(
       catalog(),
-      { query: "nothing", selected: 0, help: false },
+      { query: "nothing", selected: 0, help: false, groupIndex: 0 },
       terminal,
     );
 
     expect(rendered).toContain("No commands match this search.");
     expect(rendered).toContain("Esc clears it");
+  });
+
+  test("renders help, workspace context, descriptions, safety, and warnings", () => {
+    const value = catalog();
+    value.project.workspaceCount = 1;
+    const defaultCommand = value.commands[1];
+    const command = value.commands[0];
+    if (defaultCommand === undefined || command === undefined) {
+      throw new Error("Expected palette fixture commands");
+    }
+    value.defaultCommandId = defaultCommand.id;
+    value.packageManager.warnings = ["Multiple lockfiles detected"];
+    command.label = "Start web";
+    command.description = "Open the frontend";
+    command.workspace = {
+      name: "@acme/web",
+      path: "packages/web",
+      root: "/workspace/app/packages/web",
+      isRoot: false,
+    };
+    command.safety = { confirmationRequired: true };
+
+    const details = renderPalette(
+      value,
+      { query: "", selected: 0, help: false, groupIndex: 0 },
+      { ...terminal, color: true },
+    );
+    const help = renderPalette(
+      value,
+      { query: "", selected: 0, help: true, groupIndex: 0 },
+      terminal,
+    );
+
+    expect(details).toContain("Start web");
+    expect(details).toContain("Open the frontend");
+    expect(details).toContain("Confirmation required");
+    expect(details).toContain("Multiple lockfiles detected");
+    expect(help).toContain("KEYBOARD");
+    expect(help).toContain("Shift-Tab");
   });
 });
 
@@ -192,5 +250,69 @@ describe("openPalette", () => {
     input.emit("\u001b");
 
     expect(await result).toEqual({ kind: "cancelled", reason: "escape" });
+  });
+
+  test("cycles group filters with Tab", async () => {
+    const input = new FakeInput();
+    const output = new Sink();
+    const result = openPalette({ catalog: catalog(), input, output, capabilities: terminal });
+
+    input.emit("\t\r");
+    const selection = await result;
+
+    expect(selection.kind).toBe("selected");
+    if (selection.kind !== "selected") throw new Error("Expected a selected command");
+    expect(selection.command.name).toBe("dev");
+    expect(output.text).toContain("Start & develop");
+  });
+
+  test("supports reverse filters, keyboard help, editing, and control navigation", async () => {
+    const input = new FakeInput();
+    const output = new Sink();
+    const result = openPalette({ catalog: catalog(), input, output, capabilities: terminal });
+
+    input.emit("?");
+    input.emit("\r");
+    input.emit("devx\u007f");
+    input.emit("\u0015");
+    input.emit("\u0010\u000e");
+    input.emit("\u001B[Z");
+    input.emit("\r");
+
+    const selection = await result;
+    expect(selection.kind).toBe("selected");
+    expect(output.text).toContain("KEYBOARD");
+  });
+
+  test("returns unavailable without a usable interactive terminal or command", async () => {
+    const input = new FakeInput();
+    const output = new Sink();
+    expect(
+      await openPalette({
+        catalog: catalog(),
+        input,
+        output,
+        capabilities: { ...terminal, interactive: false },
+      }),
+    ).toEqual({ kind: "unavailable" });
+
+    const empty = catalog();
+    empty.commands = [];
+    expect(await openPalette({ catalog: empty, input, output, capabilities: terminal })).toEqual({
+      kind: "unavailable",
+    });
+  });
+
+  test("restores terminal state when setup fails", async () => {
+    const input = new FakeInput();
+    input.setRawMode = () => {
+      throw new Error("raw mode failed");
+    };
+    const output = new Sink();
+
+    expect(
+      await openPalette({ catalog: catalog(), input, output, capabilities: terminal }),
+    ).toEqual({ kind: "unavailable" });
+    expect(input.paused).toBe(true);
   });
 });

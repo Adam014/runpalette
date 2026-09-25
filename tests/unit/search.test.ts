@@ -6,8 +6,13 @@ function command(name: string, script = name): CatalogCommand {
   return {
     id: `package:${name}`,
     name,
+    label: name,
+    aliases: [],
     script,
     group: "other",
+    order: 0,
+    safety: { confirmationRequired: false },
+    workspace: { name: "project", path: ".", root: "/project", isRoot: true },
     source: { kind: "package.json", path: "/project/package.json" },
   };
 }

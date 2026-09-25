@@ -8,11 +8,15 @@
   },
   "files": [
     "CHANGELOG.md",
+    "CODE_OF_CONDUCT.md",
     "COMPATIBILITY.md",
+    "CONTRIBUTING.md",
     "dist",
     "docs",
+    "schema",
     "LICENSE",
-    "README.md"
+    "README.md",
+    "SECURITY.md"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -21,6 +25,7 @@
     "lint": "biome check .",
     "format": "biome check --write .",
     "test": "bun test",
+    "test:coverage": "bun test --coverage && bun run scripts/coverage-check.mjs",
     "verify": "bun run scripts/verify.mjs",
     "prepack": "bun run build"
   },
@@ -61,6 +66,8 @@
     "typescript": "7.0.2"
   },
   "dependencies": {
-    "cross-spawn": "7.0.6"
+    "cross-spawn": "7.0.6",
+    "fast-glob": "3.3.3",
+    "yaml": "2.9.1"
   }
 }

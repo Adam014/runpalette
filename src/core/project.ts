@@ -3,6 +3,7 @@ import { basename, dirname, join, parse, resolve } from "node:path";
 import { RunpaletteError } from "./errors.js";
 import type { ProjectContext, ProjectManifest } from "./model.js";
 import { resolvePackageManager } from "./package-manager.js";
+import { discoverWorkspaces, hasWorkspaceDeclaration } from "./workspaces.js";
 
 async function startDirectory(path: string): Promise<string> {
   const absolute = resolve(path);
@@ -42,7 +43,7 @@ async function findManifest(start: string): Promise<string> {
   );
 }
 
-function parseManifest(text: string, manifestPath: string): ProjectManifest {
+export function parseManifest(text: string, manifestPath: string): ProjectManifest {
   let value: unknown;
   try {
     value = JSON.parse(text);
@@ -91,14 +92,34 @@ function parseManifest(text: string, manifestPath: string): ProjectManifest {
     ...(typeof record.name === "string" ? { name: record.name } : {}),
     ...(typeof record.packageManager === "string" ? { packageManager: record.packageManager } : {}),
     ...(record.scripts === undefined ? {} : { scripts: record.scripts as Record<string, string> }),
+    ...(record.workspaces === undefined ? {} : { workspaces: record.workspaces }),
   };
+}
+
+async function findProjectManifest(start: string): Promise<string> {
+  const nearest = await findManifest(start);
+  let currentDirectory = dirname(nearest);
+  const filesystemRoot = parse(dirname(nearest)).root;
+  while (true) {
+    const candidate = join(currentDirectory, "package.json");
+    try {
+      if ((await stat(candidate)).isFile()) {
+        const manifest = parseManifest(await readFile(candidate, "utf8"), candidate);
+        if (await hasWorkspaceDeclaration(currentDirectory, manifest)) return candidate;
+      }
+    } catch {
+      // Keep walking: workspace roots commonly have package-less parent folders.
+    }
+    if (currentDirectory === filesystemRoot) return nearest;
+    currentDirectory = dirname(currentDirectory);
+  }
 }
 
 export async function discoverProject(options: {
   cwd: string;
   packageManager?: string;
 }): Promise<ProjectContext> {
-  const manifestPath = await findManifest(options.cwd);
+  const manifestPath = await findProjectManifest(options.cwd);
   let text: string;
   try {
     text = await readFile(manifestPath, "utf8");
@@ -118,6 +139,7 @@ export async function discoverProject(options: {
     manifest,
     ...(options.packageManager === undefined ? {} : { explicit: options.packageManager }),
   });
+  const workspaces = await discoverWorkspaces({ root, manifest, parseManifest });
 
   return {
     root,
@@ -125,5 +147,6 @@ export async function discoverProject(options: {
     name: manifest.name?.trim() || basename(root),
     manifest,
     packageManager,
+    workspaces,
   };
 }

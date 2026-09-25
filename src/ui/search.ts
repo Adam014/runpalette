@@ -39,7 +39,16 @@ export function filterCommands(
 
   return commands
     .map((command, index) => {
-      const fields = [command.name.toLowerCase(), command.script.toLowerCase()];
+      const fields = [
+        command.name,
+        command.label,
+        command.description ?? "",
+        command.script,
+        command.workspace.name,
+        command.workspace.path,
+        command.group,
+        ...command.aliases,
+      ].map((field) => field.toLowerCase());
       let total = 0;
       for (const part of parts) {
         const scores = fields

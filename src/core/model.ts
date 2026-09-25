@@ -19,6 +19,15 @@ export interface ProjectManifest {
   name?: string;
   packageManager?: string;
   scripts?: Record<string, string>;
+  workspaces?: unknown;
+}
+
+export interface ProjectWorkspace {
+  name: string;
+  root: string;
+  manifestPath: string;
+  relativePath: string;
+  manifest: ProjectManifest;
 }
 
 export interface ProjectContext {
@@ -27,6 +36,7 @@ export interface ProjectContext {
   name: string;
   manifest: ProjectManifest;
   packageManager: PackageManagerResolution;
+  workspaces: ProjectWorkspace[];
 }
 
 export const COMMAND_GROUPS = [
@@ -37,13 +47,32 @@ export const COMMAND_GROUPS = [
   { id: "other", label: "Other" },
 ] as const;
 
-export type CommandGroupId = (typeof COMMAND_GROUPS)[number]["id"];
+export type BuiltInCommandGroupId = (typeof COMMAND_GROUPS)[number]["id"];
+export type CommandGroupId = string;
+
+export interface CommandSafety {
+  confirmationRequired: boolean;
+  message?: string;
+}
+
+export interface CommandWorkspace {
+  name: string;
+  path: string;
+  root: string;
+  isRoot: boolean;
+}
 
 export interface CatalogCommand {
   id: string;
   name: string;
+  label: string;
+  description?: string;
+  aliases: string[];
   script: string;
   group: CommandGroupId;
+  order: number;
+  safety: CommandSafety;
+  workspace: CommandWorkspace;
   source: {
     kind: "package.json";
     path: string;
@@ -52,7 +81,8 @@ export interface CatalogCommand {
 
 export interface HiddenCommand {
   name: string;
-  reason: "lifecycle" | "self";
+  workspace: string;
+  reason: "lifecycle" | "self" | "config";
 }
 
 export interface CommandCatalog {
@@ -61,15 +91,17 @@ export interface CommandCatalog {
     name: string;
     root: string;
     manifestPath: string;
+    workspaceCount: number;
   };
   packageManager: PackageManagerResolution;
   groups: Array<{
-    id: CommandGroupId;
+    id: string;
     label: string;
     commands: CatalogCommand[];
   }>;
   commands: CatalogCommand[];
   hidden: HiddenCommand[];
+  defaultCommandId?: string;
 }
 
 export interface ExecutionPlan {
@@ -78,7 +110,10 @@ export interface ExecutionPlan {
   script: {
     name: string;
     value: string;
+    requestedAs: string;
   };
+  workspace: CommandWorkspace;
+  safety: CommandSafety;
   packageManager: PackageManagerName;
   executable: string;
   args: string[];

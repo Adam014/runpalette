@@ -1,5 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import { classifyCommand, createCatalog } from "../../src/core/catalog.js";
+import {
+  catalogForOutput,
+  classifyCommand,
+  commandMatchesWorkspace,
+  createCatalog,
+  filterCatalog,
+} from "../../src/core/catalog.js";
+import { parseConfig } from "../../src/core/config.js";
 import type { ProjectContext } from "../../src/core/model.js";
 
 function project(scripts: Record<string, string>): ProjectContext {
@@ -13,6 +20,7 @@ function project(scripts: Record<string, string>): ProjectContext {
       evidence: { source: "lockfile", detail: "bun.lock" },
       warnings: [],
     },
+    workspaces: [],
   };
 }
 
@@ -57,9 +65,9 @@ describe("createCatalog", () => {
 
     expect(catalog.commands.map((command) => command.name)).toEqual(["build", "test"]);
     expect(catalog.hidden).toEqual([
-      { name: "prebuild", reason: "lifecycle" },
-      { name: "postbuild", reason: "lifecycle" },
-      { name: "what", reason: "self" },
+      { name: "prebuild", workspace: ".", reason: "lifecycle" },
+      { name: "postbuild", workspace: ".", reason: "lifecycle" },
+      { name: "what", workspace: ".", reason: "self" },
     ]);
   });
 
@@ -76,9 +84,9 @@ describe("createCatalog", () => {
 
     expect(catalog.commands.map((command) => command.name)).toEqual(["preview", "publish"]);
     expect(catalog.hidden).toEqual([
-      { name: "prepare", reason: "lifecycle" },
-      { name: "prepack", reason: "lifecycle" },
-      { name: "postinstall", reason: "lifecycle" },
+      { name: "prepare", workspace: ".", reason: "lifecycle" },
+      { name: "prepack", workspace: ".", reason: "lifecycle" },
+      { name: "postinstall", workspace: ".", reason: "lifecycle" },
     ]);
   });
 
@@ -94,5 +102,79 @@ describe("classifyCommand", () => {
     expect(classifyCommand("contest")).toBe("other");
     expect(classifyCommand("test:watch")).toBe("quality");
     expect(classifyCommand("releaseCandidate")).toBe("build");
+  });
+});
+
+describe("configured and workspace catalogs", () => {
+  test("sorts custom groups and commands and qualifies an ambiguous default", () => {
+    const value = project({ check: "node check.js" });
+    value.workspaces = [
+      {
+        name: "@acme/web",
+        root: "/workspace/example/packages/web",
+        manifestPath: "/workspace/example/packages/web/package.json",
+        relativePath: "packages/web",
+        manifest: { name: "@acme/web", scripts: { dev: "vite", check: "vitest" } },
+      },
+    ];
+    const config = parseConfig({
+      schemaVersion: 1,
+      default: "@acme/web#serve",
+      groups: { local: { label: "Local workflows", order: -1 } },
+      commands: {
+        dev: { aliases: ["serve"], group: "local", order: 20 },
+        "@acme/web#dev": { label: "Open web", order: 1 },
+      },
+    });
+
+    const catalog = createCatalog(value, config);
+    expect(catalog.groups[0]?.label).toBe("Local workflows");
+    expect(catalog.groups[0]?.commands[0]?.label).toBe("Open web");
+    expect(catalog.defaultCommandId).toBe("package:packages/web:dev");
+    const workspaceCommand = catalog.commands[1];
+    if (workspaceCommand === undefined) throw new Error("Expected a workspace command");
+    expect(commandMatchesWorkspace(workspaceCommand, "@acme/web")).toBe(true);
+    expect(commandMatchesWorkspace(workspaceCommand, "packages/web")).toBe(true);
+  });
+
+  test("rejects missing and ambiguous defaults", () => {
+    const value = project({ dev: "vite" });
+    value.workspaces = [
+      {
+        name: "web",
+        root: "/workspace/example/web",
+        manifestPath: "/workspace/example/web/package.json",
+        relativePath: "web",
+        manifest: { name: "web", scripts: { dev: "vite" } },
+      },
+    ];
+    expect(() =>
+      createCatalog(value, parseConfig({ schemaVersion: 1, default: "missing" })),
+    ).toThrow("does not match");
+    expect(() => createCatalog(value, parseConfig({ schemaVersion: 1, default: "dev" }))).toThrow(
+      "ambiguous",
+    );
+  });
+
+  test("filters by group and workspace and reports invalid selectors", () => {
+    const value = project({ dev: "vite", test: "vitest" });
+    const catalog = createCatalog(value);
+
+    expect(filterCatalog(catalog, { group: "quality" }).commands.map(({ name }) => name)).toEqual([
+      "test",
+    ]);
+    expect(filterCatalog(catalog, { workspace: "root" }).commands).toHaveLength(2);
+    expect(() => filterCatalog(catalog, { group: "missing" })).toThrow("was not found");
+    expect(() => filterCatalog(catalog, { workspace: "missing" })).toThrow("was not found");
+  });
+
+  test("emits invocation-relative paths without mutating the internal catalog", () => {
+    const catalog = createCatalog(project({ dev: "vite" }));
+    const output = catalogForOutput(catalog, "/workspace");
+
+    expect(output.project.root).toBe("example");
+    expect(output.project.manifestPath).toBe("example/package.json");
+    expect(output.commands[0]?.workspace.root).toBe("example");
+    expect(catalog.project.root).toBe("/workspace/example");
   });
 });

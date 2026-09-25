@@ -1,5 +1,4 @@
 import type { CatalogCommand, CommandCatalog } from "../core/model.js";
-import { COMMAND_GROUPS } from "../core/model.js";
 import { filterCommands } from "./search.js";
 import { pad, sanitize, style, truncate } from "./style.js";
 import type { TerminalCapabilities } from "./terminal.js";
@@ -33,6 +32,7 @@ export interface PaletteState {
   query: string;
   selected: number;
   help: boolean;
+  groupIndex: number;
 }
 
 function frameLine(content: string, width: number, capabilities: TerminalCapabilities): string {
@@ -49,12 +49,13 @@ function horizontal(width: number, capabilities: TerminalCapabilities, top: bool
 }
 
 function groupedRows(
+  catalog: CommandCatalog,
   commands: readonly CatalogCommand[],
 ): Array<{ kind: "heading"; label: string } | { kind: "command"; command: CatalogCommand }> {
   const rows: Array<
     { kind: "heading"; label: string } | { kind: "command"; command: CatalogCommand }
   > = [];
-  for (const group of COMMAND_GROUPS) {
+  for (const group of catalog.groups) {
     const matching = commands.filter((command) => command.group === group.id);
     if (matching.length === 0) continue;
     rows.push({ kind: "heading", label: group.label.toUpperCase() });
@@ -63,16 +64,18 @@ function groupedRows(
   return rows;
 }
 
-function paletteCommands(catalog: CommandCatalog): CatalogCommand[] {
-  return catalog.groups.flatMap((group) => group.commands);
+function paletteCommands(catalog: CommandCatalog, groupIndex = 0): CatalogCommand[] {
+  if (groupIndex === 0) return catalog.groups.flatMap((group) => group.commands);
+  return catalog.groups[groupIndex - 1]?.commands ?? [];
 }
 
 function visibleRows(
+  catalog: CommandCatalog,
   commands: readonly CatalogCommand[],
   selectedCommand: CatalogCommand | undefined,
   maximum: number,
 ): ReturnType<typeof groupedRows> {
-  const rows = groupedRows(commands);
+  const rows = groupedRows(catalog, commands);
   if (rows.length <= maximum) return rows;
   const selectedRow = rows.findIndex(
     (row) => row.kind === "command" && row.command.id === selectedCommand?.id,
@@ -90,7 +93,7 @@ export function renderPalette(
 ): string {
   const width = Math.max(20, Math.min(capabilities.columns - 1, 96));
   const compact = width < 58 || capabilities.rows < 18;
-  const commands = filterCommands(paletteCommands(catalog), state.query);
+  const commands = filterCommands(paletteCommands(catalog, state.groupIndex), state.query);
   const selectedIndex = Math.min(state.selected, Math.max(0, commands.length - 1));
   const selected = commands[selectedIndex];
   const lines: string[] = [];
@@ -123,6 +126,13 @@ export function renderPalette(
         : style.strong(truncate(searchLabel, width - 4), capabilities)
     }`,
   );
+  const selectedGroup = state.groupIndex === 0 ? undefined : catalog.groups[state.groupIndex - 1];
+  lines.push(
+    ` ${style.dim("VIEW", capabilities)}  ${style.accent(
+      truncate(`${selectedGroup?.label ?? "All commands"} · Tab change`, width - 8),
+      capabilities,
+    )}`,
+  );
   lines.push("");
 
   if (state.help) {
@@ -130,6 +140,7 @@ export function renderPalette(
     for (const instruction of [
       "↑/↓ or Ctrl-N/Ctrl-P   move selection",
       "type                   filter immediately",
+      "Tab / Shift-Tab        change group filter",
       "Backspace / Ctrl-U     edit / clear search",
       "Enter                  run selected command",
       "Esc                    clear search, then close",
@@ -148,16 +159,19 @@ export function renderPalette(
       ),
     );
   } else {
-    const reservedRows = compact ? 10 : 12;
+    const reservedRows = compact ? 12 : 16;
     const maximumRows = Math.max(3, capabilities.rows - reservedRows);
-    for (const row of visibleRows(commands, selected, maximumRows)) {
+    for (const row of visibleRows(catalog, commands, selected, maximumRows)) {
       if (row.kind === "heading") {
         lines.push(` ${style.dim(row.label, capabilities)}`);
         continue;
       }
       const active = row.command.id === selected?.id;
       const pointer = active ? style.accent(capabilities.unicode ? "◆" : ">", capabilities) : " ";
-      const content = truncate(row.command.name, width - 7);
+      const workspace =
+        catalog.project.workspaceCount > 0 ? `  ·  ${row.command.workspace.name}` : "";
+      const confirmation = row.command.safety.confirmationRequired ? "  !" : "";
+      const content = truncate(`${row.command.label}${workspace}${confirmation}`, width - 7);
       const rendered = active
         ? style.selected(` ${pad(content, Math.max(1, width - 7))} `, capabilities)
         : ` ${content}`;
@@ -172,6 +186,21 @@ export function renderPalette(
   lines.push(` ${style.dim("RUN", capabilities)}   ${truncate(delegated, width - 8)}`);
   if (!compact) {
     lines.push(` ${style.dim("DOES", capabilities)}  ${truncate(selectedScript, width - 8)}`);
+    if (selected?.description !== undefined) {
+      lines.push(
+        ` ${style.dim("ABOUT", capabilities)} ${truncate(selected.description, width - 8)}`,
+      );
+    }
+    if (selected !== undefined && catalog.project.workspaceCount > 0) {
+      lines.push(
+        ` ${style.dim("IN", capabilities)}    ${truncate(selected.workspace.name, width - 8)}`,
+      );
+    }
+  }
+  if (selected?.safety.confirmationRequired === true) {
+    lines.push(
+      ` ${style.warning("!", capabilities)} ${truncate("Confirmation required before execution", width - 4)}`,
+    );
   }
   const warning = catalog.packageManager.warnings[0];
   if (warning !== undefined) {
@@ -179,8 +208,8 @@ export function renderPalette(
   }
   lines.push("");
   const footer = compact
-    ? "↑↓ · type · enter · esc"
-    : "↑↓ move · type search · enter run · ? help · esc close";
+    ? "↑↓ · type · tab · enter · esc"
+    : "↑↓ move · type search · tab filter · enter run · ? help · esc close";
   lines.push(` ${style.dim(truncate(footer, width - 1), capabilities)}`);
 
   return lines.map((line) => `${line}\u001B[K`).join("\n");
@@ -193,7 +222,16 @@ export async function openPalette(options: PaletteOptions): Promise<PaletteResul
   if (options.catalog.commands.length === 0) return { kind: "unavailable" };
 
   return await new Promise<PaletteResult>((resolve) => {
-    const state: PaletteState = { query: "", selected: 0, help: false };
+    const visualCommands = paletteCommands(options.catalog);
+    const defaultIndex = visualCommands.findIndex(
+      (command) => command.id === options.catalog.defaultCommandId,
+    );
+    const state: PaletteState = {
+      query: "",
+      selected: defaultIndex === -1 ? 0 : defaultIndex,
+      help: false,
+      groupIndex: 0,
+    };
     const wasRaw = options.input.isRaw === true;
     let settled = false;
     let buffered = "";
@@ -224,11 +262,19 @@ export async function openPalette(options: PaletteOptions): Promise<PaletteResul
       cleanup();
       resolve(result);
     };
-    const matches = () => filterCommands(paletteCommands(options.catalog), state.query);
+    const matches = () =>
+      filterCommands(paletteCommands(options.catalog, state.groupIndex), state.query);
     const move = (direction: -1 | 1) => {
       const length = matches().length;
       if (length === 0) return;
       state.selected = (state.selected + direction + length) % length;
+      draw();
+    };
+    const changeGroup = (direction: -1 | 1) => {
+      const length = options.catalog.groups.length + 1;
+      state.groupIndex = (state.groupIndex + direction + length) % length;
+      state.selected = 0;
+      state.help = false;
       draw();
     };
     const clearOrClose = () => {
@@ -245,6 +291,11 @@ export async function openPalette(options: PaletteOptions): Promise<PaletteResul
     };
     const processInput = () => {
       while (!settled && buffered !== "") {
+        if (buffered.startsWith("\u001B[Z")) {
+          buffered = buffered.slice(3);
+          changeGroup(-1);
+          continue;
+        }
         if (buffered.startsWith("\u001B[A")) {
           buffered = buffered.slice(3);
           move(-1);
@@ -268,6 +319,10 @@ export async function openPalette(options: PaletteOptions): Promise<PaletteResul
         }
         if (character === "\u0010") {
           move(-1);
+          continue;
+        }
+        if (character === "\t") {
+          changeGroup(1);
           continue;
         }
         if (character === "\u0015") {
