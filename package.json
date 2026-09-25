@@ -10,7 +10,8 @@
   "files": [
     "CHANGELOG.md",
     "COMPATIBILITY.md",
-    "dist/cli.js",
+    "dist",
+    "docs",
     "LICENSE",
     "README.md"
   ],
