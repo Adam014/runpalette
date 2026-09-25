@@ -12,7 +12,7 @@ surface—for developers, coding agents, and CI.
 [![CI](https://github.com/Adam014/runpalette/actions/workflows/ci.yml/badge.svg)](https://github.com/Adam014/runpalette/actions/workflows/ci.yml)
 [![Node.js](https://img.shields.io/badge/Node.js-%E2%89%A522-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 [![Package managers](https://img.shields.io/badge/delegates-npm_%C2%B7_pnpm_%C2%B7_Yarn_%C2%B7_Bun-64748b)](./COMPATIBILITY.md)
-[![Dependencies](https://img.shields.io/badge/runtime_dependencies-0-22c55e)](./package.json)
+[![Cross-platform](https://img.shields.io/badge/process_launch-hardened-22c55e)](./COMPATIBILITY.md)
 [![License](https://img.shields.io/badge/license-MIT-64748b)](./LICENSE)
 
 [Quick start](#quick-start) · [What it does](#what-runpalette-does) ·
