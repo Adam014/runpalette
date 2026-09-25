@@ -1,0 +1,58 @@
+{
+  "name": "runpalette",
+  "version": "0.0.0",
+  "description": "A project command palette for discovering and running the right script.",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "runpalette": "dist/cli.js"
+  },
+  "files": [
+    "CHANGELOG.md",
+    "COMPATIBILITY.md",
+    "dist/cli.js",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "bun run src/cli.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "test": "bun test",
+    "verify": "bun run scripts/verify.mjs",
+    "prepack": "bun run build"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "keywords": [
+    "cli",
+    "command-palette",
+    "developer-tools",
+    "npm-scripts",
+    "package-scripts",
+    "task-runner"
+  ],
+  "author": {
+    "name": "Adam Stádník",
+    "email": "adam.stadnik@seznam.cz",
+    "url": "https://github.com/Adam014"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Adam014/runpalette.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Adam014/runpalette/issues"
+  },
+  "homepage": "https://github.com/Adam014/runpalette#readme",
+  "devDependencies": {
+    "@biomejs/biome": "2.5.12",
+    "@types/bun": "1.4.2",
+    "@types/node": "22.20.2",
+    "typescript": "7.0.2"
+  }
+}
