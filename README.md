@@ -17,7 +17,7 @@ surface—for developers, coding agents, and CI.
 [Automation](#for-agents-and-automation) · [How it works](#one-project-one-command-surface) ·
 [Documentation](#documentation)
 
-<img src="https://raw.githubusercontent.com/Adam014/runpalette/main/docs/assets/runpalette-demo.gif" alt="Runpalette discovers project commands, filters them instantly, runs the selected test through pnpm, and returns a machine-readable dry-run plan." width="1120" />
+<img src="./docs/assets/runpalette-demo.gif" alt="Runpalette discovers project commands, filters them instantly, runs the selected test through pnpm, and returns a machine-readable dry-run plan." width="1120" />
 
 </div>
 
