@@ -7,12 +7,17 @@ export function renderPlainCatalog(catalog: CommandCatalog): string {
   ];
   for (const group of catalog.groups) {
     lines.push("", group.label);
-    const width = Math.min(
-      28,
-      Math.max(...group.commands.map((command) => command.name.length), 1),
+    const workspaceAware = catalog.project.workspaceCount > 0;
+    const names = group.commands.map((command) =>
+      workspaceAware ? `${command.workspace.name} · ${command.label}` : command.label,
     );
-    for (const command of group.commands) {
-      lines.push(`  ${command.name.padEnd(width)}  ${sanitize(command.script)}`);
+    const width = Math.min(28, Math.max(...names.map((name) => name.length), 1));
+    for (const [index, command] of group.commands.entries()) {
+      const name = names[index] ?? command.label;
+      const confirmation = command.safety.confirmationRequired ? "  [confirm]" : "";
+      lines.push(`  ${name.padEnd(width)}  ${sanitize(command.script)}${confirmation}`);
+      if (command.description !== undefined)
+        lines.push(`  ${"".padEnd(width)}  ${sanitize(command.description)}`);
     }
   }
   if (catalog.commands.length === 0) {

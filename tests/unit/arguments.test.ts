@@ -16,6 +16,7 @@ describe("parseArguments", () => {
       json: false,
       nonInteractive: false,
       dryRun: false,
+      yes: false,
       color: "auto",
       unicode: "auto",
       scriptName: "test:unit",
@@ -30,6 +31,7 @@ describe("parseArguments", () => {
     expect(parsed.nonInteractive).toBe(true);
     expect(parsed.color).toBe("always");
     expect(parsed.unicode).toBe("never");
+    expect(parsed.yes).toBe(false);
   });
 
   test("reports invalid flags and missing values as product errors", () => {
@@ -49,5 +51,65 @@ describe("parseArguments", () => {
     expect(parsed.cwd).toBe("/p");
     expect(parsed.json).toBe(false);
     expect(parsed.scriptArgs).toEqual(["--cwd", "elsewhere", "--json"]);
+  });
+
+  test("parses workspace, group, config, and explicit confirmation", () => {
+    const parsed = parseArguments(
+      ["list", "--workspace", "@acme/api", "--group=quality", "--config", "custom.json", "-y"],
+      "/p",
+    );
+
+    expect(parsed.workspace).toBe("@acme/api");
+    expect(parsed.group).toBe("quality");
+    expect(parsed.config).toBe("custom.json");
+    expect(parsed.yes).toBe(true);
+  });
+
+  test("supports every documented shorthand and inline value", () => {
+    const parsed = parseArguments(
+      [
+        "list",
+        "--cwd=./repo",
+        "--workspace=packages/web",
+        "--config=runpalette.ci.json",
+        "--package-manager",
+        "bun",
+        "--color=never",
+        "--unicode=always",
+        "--no-color",
+        "--no-unicode",
+        "--dry-run",
+        "--yes",
+      ],
+      "/p",
+    );
+
+    expect(parsed).toMatchObject({
+      cwd: "./repo",
+      workspace: "packages/web",
+      config: "runpalette.ci.json",
+      packageManager: "bun",
+      color: "never",
+      unicode: "never",
+      dryRun: true,
+      yes: true,
+    });
+    expect(parseArguments(["-h"], "/p").command).toBe("help");
+    expect(parseArguments(["-V"], "/p").command).toBe("version");
+  });
+
+  test("rejects incomplete and invalid forms with focused errors", () => {
+    for (const args of [
+      ["--workspace="],
+      ["--group="],
+      ["--config="],
+      ["--color=sometimes"],
+      ["--unicode=wide"],
+      ["--package-manager=other"],
+      ["--"],
+      ["list", "extra"],
+    ]) {
+      expect(() => parseArguments(args, "/p")).toThrow();
+    }
   });
 });

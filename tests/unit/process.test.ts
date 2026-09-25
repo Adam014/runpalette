@@ -7,7 +7,9 @@ describe("executePlan", () => {
       executePlan({
         schemaVersion: 1,
         command: "run",
-        script: { name: "test", value: "test" },
+        script: { name: "test", value: "test", requestedAs: "test" },
+        workspace: { name: "repo", path: ".", root: process.cwd(), isRoot: true },
+        safety: { confirmationRequired: false },
         packageManager: "npm",
         executable: "runpalette-manager-that-does-not-exist",
         args: ["run", "test"],

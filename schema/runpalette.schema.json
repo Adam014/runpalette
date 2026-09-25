@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/Adam014/runpalette/main/schema/runpalette.schema.json",
+  "title": "Runpalette configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schemaVersion": { "const": 1 },
+    "default": { "type": "string", "minLength": 1 },
+    "groups": {
+      "type": "object",
+      "propertyNames": { "pattern": "^[a-z0-9][a-z0-9._-]*$" },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "label": { "type": "string", "minLength": 1 },
+          "order": { "type": "number" }
+        }
+      }
+    },
+    "commands": {
+      "type": "object",
+      "propertyNames": { "minLength": 1 },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "label": { "type": "string", "minLength": 1 },
+          "description": { "type": "string", "minLength": 1 },
+          "group": { "type": "string", "minLength": 1 },
+          "order": { "type": "number" },
+          "hidden": { "type": "boolean" },
+          "aliases": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "confirm": {
+            "oneOf": [{ "type": "boolean" }, { "type": "string", "minLength": 1 }]
+          }
+        }
+      }
+    }
+  }
+}

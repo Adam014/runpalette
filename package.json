@@ -1,6 +1,6 @@
 {
   "name": "runpalette",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A project command palette for discovering and running the right script.",
   "type": "module",
   "bin": {
@@ -9,10 +9,13 @@
   "files": [
     "CHANGELOG.md",
     "COMPATIBILITY.md",
+    "CONTRIBUTING.md",
     "dist",
     "docs",
+    "schema",
     "LICENSE",
-    "README.md"
+    "README.md",
+    "SECURITY.md"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -21,6 +24,7 @@
     "lint": "biome check .",
     "format": "biome check --write .",
     "test": "bun test",
+    "test:coverage": "bun test --coverage && bun run scripts/coverage-check.mjs",
     "verify": "bun run scripts/verify.mjs",
     "prepack": "bun run build"
   },
@@ -61,6 +65,8 @@
     "typescript": "7.0.2"
   },
   "dependencies": {
-    "cross-spawn": "7.0.6"
+    "cross-spawn": "7.0.6",
+    "fast-glob": "3.3.3",
+    "yaml": "2.9.1"
   }
 }

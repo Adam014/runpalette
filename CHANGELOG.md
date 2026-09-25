@@ -4,6 +4,23 @@ All notable changes to Runpalette will be documented in this file.
 
 ## Unreleased
 
+## 0.2.0 - 2026-09-25
+
+- Discover root and package commands across npm, pnpm, Yarn, and Bun
+  workspaces, with explicit selection when names are ambiguous.
+- Add optional, schema-validated `runpalette.json` metadata for labels,
+  descriptions, groups, ordering, aliases, defaults, hidden entries, and
+  confirmations.
+- Add group filtering in the interactive palette with Tab and Shift-Tab plus
+  `--group` and `--workspace` filters for direct and automated use.
+- Require an explicit interactive answer or `--yes` before protected commands
+  run, while preserving a reviewable dry-run path.
+- Return short, ranked suggestions for unknown commands instead of dumping the
+  entire project catalog.
+- Add focused configuration and workspace guides and ship the public JSON
+  schema in the npm package.
+- Enforce over 90% line and function coverage, publish LCOV results to Codecov,
+  and validate packed workspace consumers through all four package managers.
 - Add public contribution and security policies and make them discoverable
   from the project README.
 

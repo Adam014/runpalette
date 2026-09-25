@@ -1,11 +1,13 @@
 import { readFile } from "node:fs/promises";
 import { relative } from "node:path";
 import process from "node:process";
-import { catalogForOutput, createCatalog } from "../core/catalog.js";
+import { catalogForOutput, createCatalog, filterCatalog } from "../core/catalog.js";
+import { loadConfig } from "../core/config.js";
 import { RunpaletteError } from "../core/errors.js";
 import { createExecutionPlan } from "../core/plan.js";
 import { discoverProject } from "../core/project.js";
 import { executePlan } from "../process/run.js";
+import { confirmExecution } from "../ui/confirm.js";
 import { openPalette } from "../ui/palette.js";
 import { renderPlainCatalog, renderPlan } from "../ui/plain.js";
 import { style } from "../ui/style.js";
@@ -67,7 +69,18 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       cwd: parsed.cwd,
       ...(parsed.packageManager === undefined ? {} : { packageManager: parsed.packageManager }),
     });
-    const catalog = createCatalog(project);
+    const config = await loadConfig({
+      root: project.root,
+      ...(parsed.config === undefined ? {} : { path: parsed.config }),
+    });
+    const completeCatalog = createCatalog(project, config);
+    const catalog =
+      parsed.command === "run"
+        ? completeCatalog
+        : filterCatalog(completeCatalog, {
+            ...(parsed.group === undefined ? {} : { group: parsed.group }),
+            ...(parsed.workspace === undefined ? {} : { workspace: parsed.workspace }),
+          });
     const capabilities = terminalCapabilities({
       input: process.stdin,
       output: process.stderr,
@@ -96,6 +109,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
     }
 
     let scriptName = parsed.scriptName;
+    let selectedWorkspace = parsed.workspace;
     if (parsed.command === "home") {
       const selection = await openPalette({
         catalog,
@@ -109,10 +123,16 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
         return catalog.commands.length === 0 ? 2 : 0;
       }
       scriptName = selection.command.name;
+      selectedWorkspace = selection.command.workspace.path;
     }
 
     if (scriptName === undefined) throw new Error("Command selection invariant failed.");
-    const plan = createExecutionPlan(catalog, scriptName, parsed.scriptArgs);
+    const plan = createExecutionPlan(
+      completeCatalog,
+      scriptName,
+      parsed.scriptArgs,
+      selectedWorkspace,
+    );
     if (parsed.dryRun) {
       process.stdout.write(
         parsed.json
@@ -131,6 +151,20 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
         "JSON execution requires --dry-run in this pre-release build.",
         "Use --dry-run for a machine-readable plan or run without --json.",
       );
+    }
+
+    if (plan.safety.confirmationRequired && !parsed.yes) {
+      if (!capabilities.interactive) {
+        throw new RunpaletteError(
+          "CONFIRMATION_REQUIRED",
+          `Command ${JSON.stringify(plan.script.name)} requires confirmation.`,
+          "Review it with --dry-run, then re-run with --yes.",
+        );
+      }
+      if (!(await confirmExecution(plan))) {
+        process.stderr.write("Cancelled.\n");
+        return 0;
+      }
     }
 
     process.stderr.write(`\n${style.accent("›", capabilities)} ${renderPlan(plan).trimStart()}\n`);
@@ -154,5 +188,12 @@ function catalogForOutputPlan(
   plan: ReturnType<typeof createExecutionPlan>,
   invocationCwd: string,
 ): ReturnType<typeof createExecutionPlan> {
-  return { ...plan, cwd: relative(invocationCwd, plan.cwd) || "." };
+  return {
+    ...plan,
+    cwd: relative(invocationCwd, plan.cwd) || ".",
+    workspace: {
+      ...plan.workspace,
+      root: relative(invocationCwd, plan.workspace.root) || ".",
+    },
+  };
 }

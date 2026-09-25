@@ -93,7 +93,7 @@ const steps = [
   ["private-context boundary", privateBoundary],
   ["TypeScript", () => run("bun", ["run", "typecheck"])],
   ["Biome", () => run("bun", ["run", "lint"])],
-  ["unit and integration tests", () => run("bun", ["test"])],
+  ["unit and integration coverage", () => run("bun", ["run", "test:coverage"])],
   ["production build", () => run("bun", ["run", "build"])],
   ["Node.js artifact", () => run("node", ["dist/cli.js", "--version"])],
   ["Bun artifact", () => run("bun", ["dist/cli.js", "--version"])],

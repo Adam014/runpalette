@@ -9,9 +9,13 @@ export interface CliArguments {
   command: CliCommand;
   cwd: string;
   packageManager?: PackageManagerName;
+  workspace?: string;
+  group?: string;
+  config?: string;
   json: boolean;
   nonInteractive: boolean;
   dryRun: boolean;
+  yes: boolean;
   color: Preference;
   unicode: Preference;
   scriptName?: string;
@@ -42,6 +46,7 @@ export function parseArguments(args: readonly string[], processCwd: string): Cli
     json: false,
     nonInteractive: false,
     dryRun: false,
+    yes: false,
     color: "auto",
     unicode: "auto",
     scriptArgs: [],
@@ -75,6 +80,10 @@ export function parseArguments(args: readonly string[], processCwd: string): Cli
       result.dryRun = true;
       continue;
     }
+    if (argument === "--yes" || argument === "-y") {
+      result.yes = true;
+      continue;
+    }
     if (argument === "--no-color") {
       result.color = "never";
       continue;
@@ -89,6 +98,39 @@ export function parseArguments(args: readonly string[], processCwd: string): Cli
     }
     if (argument === "--cwd") {
       result.cwd = valueAfter(args, index, argument);
+      index += 1;
+      continue;
+    }
+    if (argument.startsWith("--workspace=")) {
+      result.workspace = argument.slice("--workspace=".length);
+      if (result.workspace === "")
+        throw new RunpaletteError("ARGUMENT_INVALID", "Missing value for --workspace.");
+      continue;
+    }
+    if (argument === "--workspace") {
+      result.workspace = valueAfter(args, index, argument);
+      index += 1;
+      continue;
+    }
+    if (argument.startsWith("--group=")) {
+      result.group = argument.slice("--group=".length);
+      if (result.group === "")
+        throw new RunpaletteError("ARGUMENT_INVALID", "Missing value for --group.");
+      continue;
+    }
+    if (argument === "--group") {
+      result.group = valueAfter(args, index, argument);
+      index += 1;
+      continue;
+    }
+    if (argument.startsWith("--config=")) {
+      result.config = argument.slice("--config=".length);
+      if (result.config === "")
+        throw new RunpaletteError("ARGUMENT_INVALID", "Missing value for --config.");
+      continue;
+    }
+    if (argument === "--config") {
+      result.config = valueAfter(args, index, argument);
       index += 1;
       continue;
     }

@@ -1,6 +1,6 @@
 # Compatibility
 
-Runpalette 0.1.x is the first public single-package release. Compatibility is
+Runpalette 0.2.x is the current public release line. Compatibility is
 claimed only after the packed CLI passes its documented contract on that
 environment.
 
@@ -10,9 +10,9 @@ also smoke-tests the built artifact with Bun, but Bun and Deno remain preview
 runtime targets until they pass the same complete packaged-runtime contract.
 
 Project scripts are delegated to npm, pnpm, Yarn, or Bun independently of the
-runtime executing Runpalette. Execution-plan tests cover all four, and CI
-installs the packed release into clean consumers through each package manager
-before a release can pass.
+runtime executing Runpalette. CI installs the packed release into a clean
+workspace consumer through each package manager, discovers a package command,
+and executes it from the selected workspace before a release can pass.
 
 The terminal UI has explicit plain-text, ASCII, no-color, narrow-terminal, and
 non-interactive paths. Linux, macOS, and Windows run the same source, build,
