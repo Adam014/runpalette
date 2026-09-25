@@ -4,6 +4,9 @@ All notable changes to Runpalette will be documented in this file.
 
 ## Unreleased
 
+- Add public contribution and security policies and make them discoverable
+  from the project README.
+
 ## 0.1.0 - 2026-09-25
 
 - Establish a portable TypeScript CLI foundation without runtime dependencies.

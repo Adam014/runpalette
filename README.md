@@ -8,7 +8,7 @@ Turn the scripts your repository already owns into one searchable command
 surface—for developers, coding agents, and CI.
 
 [![JSON automation](https://img.shields.io/badge/automation-versioned_JSON-0891b2)](./docs/CLI.md#automation-and-agents)
-[![npm version](https://img.shields.io/npm/v/runpalette?color=cb3837&logo=npm)](https://www.npmjs.com/package/runpalette)
+[![npm](https://img.shields.io/npm/v/runpalette?label=npm&color=cb3837&logo=npm)](https://www.npmjs.com/package/runpalette)
 [![CI](https://github.com/Adam014/runpalette/actions/workflows/ci.yml/badge.svg)](https://github.com/Adam014/runpalette/actions/workflows/ci.yml)
 [![Node.js](https://img.shields.io/badge/Node.js-%E2%89%A522-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 [![Package managers](https://img.shields.io/badge/delegates-npm_%C2%B7_pnpm_%C2%B7_Yarn_%C2%B7_Bun-64748b)](./COMPATIBILITY.md)
@@ -174,13 +174,15 @@ promoted only after the packaged CLI passes their documented test contract.
 | [CLI guide](./docs/CLI.md) | Search, navigate, run scripts, pass arguments, or use JSON. |
 | [Compatibility](./COMPATIBILITY.md) | Check runtimes, package managers, terminals, and support status. |
 | [Changelog](./CHANGELOG.md) | Review user-visible additions and behavior changes. |
+| [Contributing](./CONTRIBUTING.md) | Set up the repository and prepare a focused change. |
+| [Security](./SECURITY.md) | Report a vulnerability privately and review the support policy. |
 
 Run `runpalette --help` for the complete command and option reference.
 
 ## Project
 
-[Changelog](./CHANGELOG.md) · [CLI guide](./docs/CLI.md) ·
-[MIT License](./LICENSE)
+[Changelog](./CHANGELOG.md) · [Contributing](./CONTRIBUTING.md) ·
+[Security](./SECURITY.md) · [CLI guide](./docs/CLI.md) · [MIT License](./LICENSE)
 
 Runpalette is a discovery and launch layer over commands your project already
 owns. It is not another package manager, task format, or build system.
