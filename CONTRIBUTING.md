@@ -30,7 +30,12 @@ bun run dev -- --help
 bun run typecheck
 bun run lint
 bun run test
+bun run test:coverage
 ```
+
+Coverage produces `coverage/lcov.info` and enforces at least 90% line and
+function coverage. Pull requests upload that verified report to Codecov; add
+behavioral tests for new branches instead of excluding production code.
 
 ## Implementation expectations
 

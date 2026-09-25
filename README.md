@@ -10,6 +10,7 @@ surface—for developers, coding agents, and CI.
 [![JSON automation](https://img.shields.io/badge/automation-versioned_JSON-0891b2)](./docs/CLI.md#automation-and-agents)
 [![npm](https://img.shields.io/npm/v/runpalette?label=npm&color=cb3837&logo=npm)](https://www.npmjs.com/package/runpalette)
 [![CI](https://github.com/Adam014/runpalette/actions/workflows/ci.yml/badge.svg)](https://github.com/Adam014/runpalette/actions/workflows/ci.yml)
+[![Coverage](https://codecov.io/gh/Adam014/runpalette/graph/badge.svg)](https://codecov.io/gh/Adam014/runpalette)
 [![Node.js](https://img.shields.io/badge/Node.js-%E2%89%A522-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 [![Package managers](https://img.shields.io/badge/delegates-npm_%C2%B7_pnpm_%C2%B7_Yarn_%C2%B7_Bun-64748b)](./COMPATIBILITY.md)
 [![Cross-platform](https://img.shields.io/badge/process_launch-hardened-22c55e)](./COMPATIBILITY.md)
@@ -59,8 +60,13 @@ The same package can be installed with `pnpm add -D runpalette`,
   `--cwd` and confirm the selected repository before anything runs.
 - **Make commands scannable** — group existing scripts into development,
   quality, build/release, data/operations, and a conservative fallback group.
+- **Understand workspaces** — discover root and package scripts across npm,
+  pnpm, Yarn, and Bun monorepos, then run from the selected package directory.
 - **Search immediately** — type any part of a script name or implementation;
-  use arrows or `Ctrl-N` / `Ctrl-P` to move and Enter to run.
+  press Tab to focus a group, then use arrows or `Ctrl-N` / `Ctrl-P` to move.
+- **Describe your workflows** — add labels, descriptions, aliases, ordering,
+  custom groups, defaults, hidden entries, and explicit confirmation without
+  replacing the scripts your project already owns.
 - **Show the exact action** — keep the detected package manager, delegated
   command, and underlying script visible while selecting.
 - **Delegate faithfully** — let npm, pnpm, Yarn, or Bun execute the script so
@@ -82,7 +88,10 @@ Or skip the interface when you already know the script:
 
 ```bash
 runpalette list
+runpalette list --workspace @acme/web
+runpalette list --group quality
 runpalette run test:unit
+runpalette run dev --workspace @acme/web
 runpalette run test:unit -- --watch
 runpalette run build --dry-run
 ```
@@ -92,6 +101,11 @@ before the selected task starts. The child then receives ordinary stdin,
 stdout, and stderr instead of running inside a simulated console.
 
 [Learn the keyboard and command surface →](./docs/CLI.md)
+
+For an optional team-owned command surface, add a validated
+[`runpalette.json`](./docs/configuration.md). Monorepos require no Runpalette
+configuration; see the [workspace guide](./docs/workspaces.md) for selection and
+ambiguity behavior.
 
 ### For agents and automation
 
@@ -146,10 +160,10 @@ preview the execution plan or delegate it unchanged
 
 | Command source | Package managers | CLI runtime | Interfaces |
 | --- | --- | --- | --- |
-| `package.json` scripts | npm · pnpm · Yarn · Bun | Node.js 22+ | interactive TTY · plain text · JSON |
+| root and workspace `package.json` scripts | npm · pnpm · Yarn · Bun | Node.js 22+ | interactive TTY · plain text · JSON |
 
 Package-manager choice is independent from the runtime executing Runpalette.
-The `0.1.x` release line targets Node.js 22 or newer. Additional runtimes are
+The `0.2.x` release line targets Node.js 22 or newer. Additional runtimes are
 promoted only after the packaged CLI passes their documented test contract.
 
 [See current compatibility evidence →](./COMPATIBILITY.md)
@@ -172,6 +186,8 @@ promoted only after the packaged CLI passes their documented test contract.
 | Guide | Start here when you want to… |
 | --- | --- |
 | [CLI guide](./docs/CLI.md) | Search, navigate, run scripts, pass arguments, or use JSON. |
+| [Configuration](./docs/configuration.md) | Name, group, order, protect, hide, alias, or default commands. |
+| [Workspaces](./docs/workspaces.md) | Use Runpalette in npm, pnpm, Yarn, or Bun monorepos. |
 | [Compatibility](./COMPATIBILITY.md) | Check runtimes, package managers, terminals, and support status. |
 | [Changelog](./CHANGELOG.md) | Review user-visible additions and behavior changes. |
 | [Contributing](./CONTRIBUTING.md) | Set up the repository and prepare a focused change. |
