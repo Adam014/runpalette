@@ -1,6 +1,6 @@
 {
   "name": "runpalette",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A project command palette for discovering and running the right script.",
   "type": "module",
   "bin": {
@@ -8,7 +8,6 @@
   },
   "files": [
     "CHANGELOG.md",
-    "CODE_OF_CONDUCT.md",
     "COMPATIBILITY.md",
     "CONTRIBUTING.md",
     "dist",
