@@ -17,3 +17,5 @@ All notable changes to Runpalette will be documented in this file.
   exit codes.
 - Verify source, built Node and Bun artifacts, npm package contents, and a clean
   consumer installation with one concise command.
+- Add a product-led README and an optimized terminal walkthrough while keeping
+  repository-only marketing media out of the npm artifact.

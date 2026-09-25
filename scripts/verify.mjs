@@ -56,6 +56,9 @@ async function packedArtifact() {
     if ([...paths].some((path) => path === "AGENTS.md" || path.startsWith("context/"))) {
       throw new Error("Packed artifact contains private project context");
     }
+    if ([...paths].some((path) => path.startsWith("docs/assets/"))) {
+      throw new Error("Packed artifact contains repository-only marketing media");
+    }
 
     const consumer = join(temporary, "consumer");
     await mkdir(consumer);
