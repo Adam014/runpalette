@@ -1,5 +1,5 @@
-import { spawn } from "node:child_process";
 import { constants } from "node:os";
+import spawn from "cross-spawn";
 import { RunpaletteError } from "../core/errors.js";
 import type { ExecutionPlan } from "../core/model.js";
 

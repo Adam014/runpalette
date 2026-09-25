@@ -1,9 +1,8 @@
 {
   "name": "runpalette",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "A project command palette for discovering and running the right script.",
   "type": "module",
-  "private": true,
   "bin": {
     "runpalette": "dist/cli.js"
   },
@@ -27,6 +26,10 @@
   },
   "engines": {
     "node": ">=22"
+  },
+  "packageManager": "bun@1.3.11",
+  "publishConfig": {
+    "access": "public"
   },
   "keywords": [
     "cli",
@@ -53,7 +56,11 @@
   "devDependencies": {
     "@biomejs/biome": "2.5.12",
     "@types/bun": "1.4.2",
+    "@types/cross-spawn": "6.0.6",
     "@types/node": "22.20.2",
     "typescript": "7.0.2"
+  },
+  "dependencies": {
+    "cross-spawn": "7.0.6"
   }
 }
