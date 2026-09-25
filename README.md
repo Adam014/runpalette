@@ -8,6 +8,8 @@ Turn the scripts your repository already owns into one searchable command
 surface—for developers, coding agents, and CI.
 
 [![JSON automation](https://img.shields.io/badge/automation-versioned_JSON-0891b2)](./docs/CLI.md#automation-and-agents)
+[![npm version](https://img.shields.io/npm/v/runpalette?color=cb3837&logo=npm)](https://www.npmjs.com/package/runpalette)
+[![CI](https://github.com/Adam014/runpalette/actions/workflows/ci.yml/badge.svg)](https://github.com/Adam014/runpalette/actions/workflows/ci.yml)
 [![Node.js](https://img.shields.io/badge/Node.js-%E2%89%A522-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 [![Package managers](https://img.shields.io/badge/delegates-npm_%C2%B7_pnpm_%C2%B7_Yarn_%C2%B7_Bun-64748b)](./COMPATIBILITY.md)
 [![Dependencies](https://img.shields.io/badge/runtime_dependencies-0-22c55e)](./package.json)
@@ -23,21 +25,33 @@ surface—for developers, coding agents, and CI.
 
 ## Quick start
 
-Runpalette is currently a source preview and is not published to npm yet. Build
-the CLI once, then point it at any JavaScript project:
+Try Runpalette without changing the project:
 
 ```bash
-git clone git@github.com:Adam014/runpalette.git
-cd runpalette
-bun install
-bun run build
-node dist/cli.js --cwd ../your-project
+npx runpalette
 ```
 
 Runpalette finds the nearest `package.json`, detects the project package
 manager, and opens an immediate type-to-search palette. Nothing needs to be
 copied into the target project and Runpalette does not introduce a new task
 format.
+
+Install it for the whole team and expose the short project-local command:
+
+```bash
+npm install --save-dev runpalette
+```
+
+```json
+{
+  "scripts": {
+    "what": "runpalette"
+  }
+}
+```
+
+The same package can be installed with `pnpm add -D runpalette`,
+`yarn add -D runpalette`, or `bun add -d runpalette`.
 
 ## What Runpalette does
 
@@ -135,9 +149,8 @@ preview the execution plan or delegate it unchanged
 | `package.json` scripts | npm · pnpm · Yarn · Bun | Node.js 22+ | interactive TTY · plain text · JSON |
 
 Package-manager choice is independent from the runtime executing Runpalette.
-The current preview targets Node.js 22 or newer; additional runtimes and hosts
-will be promoted only after the packaged CLI passes their documented test
-contract.
+The `0.1.x` release line targets Node.js 22 or newer. Additional runtimes are
+promoted only after the packaged CLI passes their documented test contract.
 
 [See current compatibility evidence →](./COMPATIBILITY.md)
 
