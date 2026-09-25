@@ -2,6 +2,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import process from "node:process";
+import spawn from "cross-spawn";
 
 const manager = process.argv[2];
 const supported = new Set(["npm", "pnpm", "yarn", "bun"]);
@@ -10,19 +11,18 @@ if (!manager || !supported.has(manager)) {
 }
 
 function run(command, args, options = {}) {
-  const result = Bun.spawnSync({
-    cmd: [command, ...args],
+  const result = spawn.sync(command, args, {
     cwd: process.cwd(),
     env: process.env,
-    stdout: "pipe",
-    stderr: "pipe",
+    encoding: "utf8",
     ...options,
   });
-  if (result.exitCode !== 0) {
-    const output = [result.stdout.toString(), result.stderr.toString()].filter(Boolean).join("\n");
-    throw new Error(`${command} ${args.join(" ")} exited with ${result.exitCode}\n${output}`);
+  if (result.error) throw result.error;
+  if (result.status !== 0) {
+    const output = [result.stdout, result.stderr].filter(Boolean).join("\n");
+    throw new Error(`${command} ${args.join(" ")} exited with ${result.status}\n${output}`);
   }
-  return result.stdout.toString();
+  return result.stdout ?? "";
 }
 
 const installArgs = {
