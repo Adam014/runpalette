@@ -1,10 +1,12 @@
 export type RunpaletteErrorCode =
+  | "ARGUMENT_INVALID"
   | "PROJECT_NOT_FOUND"
   | "PROJECT_PATH_INVALID"
   | "MANIFEST_READ_FAILED"
   | "MANIFEST_INVALID"
   | "SCRIPTS_INVALID"
   | "COMMAND_NOT_FOUND"
+  | "PACKAGE_MANAGER_NOT_FOUND"
   | "PACKAGE_MANAGER_INVALID";
 
 export class RunpaletteError extends Error {

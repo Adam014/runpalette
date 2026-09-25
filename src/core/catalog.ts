@@ -56,6 +56,25 @@ const GROUP_PATTERNS: ReadonlyArray<{
   },
 ];
 
+// npm invokes these names as part of install and publishing lifecycles. They are
+// implementation hooks rather than intentional, everyday entry points, so the
+// default palette keeps them out of the user's way. Named scripts such as
+// `start`, `test`, and `publish` remain visible because users commonly run them
+// directly even though npm also assigns some of them special behavior.
+const AUTOMATIC_LIFECYCLE_SCRIPTS = new Set([
+  "dependencies",
+  "install",
+  "postinstall",
+  "postpack",
+  "postprepare",
+  "preinstall",
+  "prepack",
+  "prepare",
+  "preprepare",
+  "prepublish",
+  "prepublishOnly",
+]);
+
 function tokens(name: string): string[] {
   return name
     .replace(/([a-z\d])([A-Z])/gu, "$1 $2")
@@ -79,6 +98,7 @@ export function classifyCommand(name: string): CommandGroupId {
 }
 
 function isLifecycleScript(name: string, allNames: ReadonlySet<string>): boolean {
+  if (AUTOMATIC_LIFECYCLE_SCRIPTS.has(name)) return true;
   if (name.startsWith("pre") && name.length > 3) return allNames.has(name.slice(3));
   if (name.startsWith("post") && name.length > 4) return allNames.has(name.slice(4));
   return false;

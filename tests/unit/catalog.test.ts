@@ -63,10 +63,29 @@ describe("createCatalog", () => {
     ]);
   });
 
-  test("does not hide unrelated pre-prefixed scripts", () => {
-    const catalog = createCatalog(project({ prepare: "husky", preview: "vite preview" }));
+  test("hides npm lifecycle hooks that run automatically", () => {
+    const catalog = createCatalog(
+      project({
+        prepare: "husky",
+        prepack: "tsc",
+        postinstall: "patch-package",
+        preview: "vite preview",
+        publish: "node publish.js",
+      }),
+    );
 
-    expect(catalog.commands.map((command) => command.name)).toEqual(["prepare", "preview"]);
+    expect(catalog.commands.map((command) => command.name)).toEqual(["preview", "publish"]);
+    expect(catalog.hidden).toEqual([
+      { name: "prepare", reason: "lifecycle" },
+      { name: "prepack", reason: "lifecycle" },
+      { name: "postinstall", reason: "lifecycle" },
+    ]);
+  });
+
+  test("does not hide unrelated pre-prefixed scripts", () => {
+    const catalog = createCatalog(project({ preview: "vite preview", preflight: "node check.js" }));
+
+    expect(catalog.commands.map((command) => command.name)).toEqual(["preview", "preflight"]);
   });
 });
 
