@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { join } from "node:path";
 import {
   catalogForOutput,
   classifyCommand,
@@ -173,7 +174,7 @@ describe("configured and workspace catalogs", () => {
     const output = catalogForOutput(catalog, "/workspace");
 
     expect(output.project.root).toBe("example");
-    expect(output.project.manifestPath).toBe("example/package.json");
+    expect(output.project.manifestPath).toBe(join("example", "package.json"));
     expect(output.commands[0]?.workspace.root).toBe("example");
     expect(catalog.project.root).toBe("/workspace/example");
   });
