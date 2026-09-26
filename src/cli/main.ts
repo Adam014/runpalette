@@ -100,7 +100,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
           ),
         );
       } else {
-        process.stdout.write(renderPlainCatalog(catalog));
+        process.stdout.write(renderPlainCatalog(catalog, capabilities));
         for (const warning of catalog.packageManager.warnings) {
           process.stderr.write(`! ${warning}\n`);
         }
@@ -119,7 +119,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       });
       if (selection.kind === "cancelled") return selection.reason === "interrupt" ? 130 : 0;
       if (selection.kind === "unavailable") {
-        process.stdout.write(renderPlainCatalog(catalog));
+        process.stdout.write(renderPlainCatalog(catalog, capabilities));
         return catalog.commands.length === 0 ? 2 : 0;
       }
       scriptName = selection.command.name;
@@ -161,7 +161,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
           "Review it with --dry-run, then re-run with --yes.",
         );
       }
-      if (!(await confirmExecution(plan))) {
+      if (!(await confirmExecution(plan, {}, capabilities.unicode))) {
         process.stderr.write("Cancelled.\n");
         return 0;
       }

@@ -63,9 +63,22 @@ describe("main", () => {
     const json = await capture(["list", "--cwd", root, "--json"]);
 
     expect(plain.code).toBe(0);
-    expect(plain.stdout).toContain("main-fixture · npm");
+    expect(plain.stdout).toContain("main-fixture");
+    expect(plain.stdout).toContain("npm");
     expect(home.stdout).toContain("Start & develop");
     expect(JSON.parse(json.stdout).data.commands).toHaveLength(2);
+  });
+
+  test("honors explicit color and Unicode preferences in plain output", async () => {
+    const root = await fixture();
+    const ascii = await capture(["list", "--cwd", root, "--no-color", "--no-unicode"]);
+    const colored = await capture(["list", "--cwd", root, "--color=always", "--unicode=never"]);
+
+    expect([...ascii.stdout].every((character) => character.charCodeAt(0) <= 0x7f)).toBe(true);
+    expect(ascii.stdout).not.toContain("\u001B[");
+    expect(ascii.stdout).toContain("main-fixture | npm | 2 commands");
+    expect(colored.stdout).toContain("\u001B[");
+    expect(colored.stdout).not.toContain(" · ");
   });
 
   test("prints human and machine-readable dry-run plans", async () => {

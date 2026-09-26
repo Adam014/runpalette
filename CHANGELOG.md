@@ -4,6 +4,14 @@ All notable changes to Runpalette will be documented in this file.
 
 ## Unreleased
 
+## 0.2.1 - 2026-09-26
+
+- Make `--no-unicode`, `--unicode=never`, and `TERM=dumb` use ASCII-only UI
+  chrome in plain output, the interactive palette, truncation, and confirmation
+  prompts.
+- Honor `--color=always` for redirected plain catalogs while preserving
+  color-free automatic, `NO_COLOR`, and machine-readable output.
+
 ## 0.2.0 - 2026-09-25
 
 - Discover root and package commands across npm, pnpm, Yarn, and Bun

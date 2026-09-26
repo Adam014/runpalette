@@ -1,23 +1,35 @@
 import type { CommandCatalog, ExecutionPlan } from "../core/model.js";
-import { sanitize } from "./style.js";
+import { sanitize, style } from "./style.js";
+import type { TerminalCapabilities } from "./terminal.js";
 
-export function renderPlainCatalog(catalog: CommandCatalog): string {
+export function renderPlainCatalog(
+  catalog: CommandCatalog,
+  capabilities: TerminalCapabilities,
+): string {
+  const separator = capabilities.unicode ? " · " : " | ";
   const lines = [
-    `${sanitize(catalog.project.name)} · ${catalog.packageManager.name} · ${String(catalog.commands.length)} commands`,
+    style.strong(
+      `${sanitize(catalog.project.name)}${separator}${catalog.packageManager.name}${separator}${String(catalog.commands.length)} commands`,
+      capabilities,
+    ),
   ];
   for (const group of catalog.groups) {
-    lines.push("", group.label);
+    lines.push("", style.accent(group.label, capabilities));
     const workspaceAware = catalog.project.workspaceCount > 0;
     const names = group.commands.map((command) =>
-      workspaceAware ? `${command.workspace.name} · ${command.label}` : command.label,
+      workspaceAware ? `${command.workspace.name}${separator}${command.label}` : command.label,
     );
     const width = Math.min(28, Math.max(...names.map((name) => name.length), 1));
     for (const [index, command] of group.commands.entries()) {
       const name = names[index] ?? command.label;
-      const confirmation = command.safety.confirmationRequired ? "  [confirm]" : "";
+      const confirmation = command.safety.confirmationRequired
+        ? style.warning("  [confirm]", capabilities)
+        : "";
       lines.push(`  ${name.padEnd(width)}  ${sanitize(command.script)}${confirmation}`);
       if (command.description !== undefined)
-        lines.push(`  ${"".padEnd(width)}  ${sanitize(command.description)}`);
+        lines.push(
+          style.dim(`  ${"".padEnd(width)}  ${sanitize(command.description)}`, capabilities),
+        );
     }
   }
   if (catalog.commands.length === 0) {
