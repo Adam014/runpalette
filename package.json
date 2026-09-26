@@ -1,6 +1,6 @@
 {
   "name": "runpalette",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "A project command palette for discovering and running the right script.",
   "type": "module",
   "bin": {

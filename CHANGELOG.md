@@ -4,6 +4,12 @@ All notable changes to Runpalette will be documented in this file.
 
 ## Unreleased
 
+## 0.2.2 - 2026-09-26
+
+- Return help through the versioned result envelope when `--help --json` is
+  requested, matching every other machine-readable result.
+- Keep help output ASCII-only when Unicode rendering is disabled.
+
 ## 0.2.1 - 2026-09-26
 
 - Make `--no-unicode`, `--unicode=never`, and `TERM=dumb` use ASCII-only UI
