@@ -29,3 +29,7 @@ Examples:
   runpalette run test --workspace @acme/api
   runpalette run build --dry-run
 `;
+
+export function renderHelp(unicode: boolean): string {
+  return unicode ? HELP : HELP.replaceAll("—", "-");
+}

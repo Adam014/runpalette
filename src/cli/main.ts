@@ -13,7 +13,7 @@ import { renderPlainCatalog, renderPlan } from "../ui/plain.js";
 import { style } from "../ui/style.js";
 import { terminalCapabilities } from "../ui/terminal.js";
 import { parseArguments } from "./arguments.js";
-import { HELP } from "./help.js";
+import { renderHelp } from "./help.js";
 
 async function packageVersion(): Promise<string> {
   try {
@@ -55,8 +55,17 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
   let parsed: ReturnType<typeof parseArguments> | undefined;
   try {
     parsed = parseArguments(argv, process.cwd());
+    const capabilities = terminalCapabilities({
+      input: process.stdin,
+      output: process.stderr,
+      environment: process.env,
+      nonInteractive: parsed.nonInteractive,
+      color: parsed.color,
+      unicode: parsed.unicode,
+    });
     if (parsed.command === "help") {
-      process.stdout.write(HELP);
+      const help = renderHelp(capabilities.unicode);
+      process.stdout.write(parsed.json ? success("help", { text: help }) : help);
       return 0;
     }
     if (parsed.command === "version") {
@@ -81,15 +90,6 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
             ...(parsed.group === undefined ? {} : { group: parsed.group }),
             ...(parsed.workspace === undefined ? {} : { workspace: parsed.workspace }),
           });
-    const capabilities = terminalCapabilities({
-      input: process.stdin,
-      output: process.stderr,
-      environment: process.env,
-      nonInteractive: parsed.nonInteractive,
-      color: parsed.color,
-      unicode: parsed.unicode,
-    });
-
     if (parsed.command === "list" || (parsed.command === "home" && !capabilities.interactive)) {
       if (parsed.json) {
         process.stdout.write(

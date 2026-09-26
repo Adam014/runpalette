@@ -47,11 +47,19 @@ async function fixture(): Promise<string> {
 describe("main", () => {
   test("renders help and versions in human and JSON modes", async () => {
     const help = await capture(["--help"]);
+    const asciiHelp = await capture(["--help", "--no-unicode"]);
+    const jsonHelp = await capture(["--help", "--json"]);
     const version = await capture(["--version"]);
     const json = await capture(["--version", "--json"]);
 
     expect(help).toMatchObject({ code: 0, stderr: "" });
     expect(help.stdout).toContain("Usage:");
+    expect([...asciiHelp.stdout].every((character) => character.charCodeAt(0) <= 0x7f)).toBe(true);
+    expect(JSON.parse(jsonHelp.stdout)).toMatchObject({
+      ok: true,
+      command: "help",
+      data: { text: expect.stringContaining("Usage:") },
+    });
     expect(version.stdout).toMatch(/^\d+\.\d+\.\d+\n$/u);
     expect(JSON.parse(json.stdout)).toMatchObject({ ok: true, command: "version" });
   });

@@ -136,6 +136,13 @@ overrides.
 Diagnostics remain on stderr. Every result includes a `schemaVersion` and an
 explicit `ok` value.
 
+Help and version queries follow the same envelope when `--json` is present:
+
+```bash
+runpalette --help --json
+runpalette --version --json
+```
+
 ```bash
 runpalette list --json
 runpalette run test --dry-run --json -- --watch
