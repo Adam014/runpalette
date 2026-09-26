@@ -38,7 +38,7 @@ export interface PaletteState {
 function frameLine(content: string, width: number, capabilities: TerminalCapabilities): string {
   const vertical = capabilities.unicode ? "│" : "|";
   const innerWidth = Math.max(1, width - 4);
-  return `${vertical} ${pad(truncate(content, innerWidth), innerWidth)} ${vertical}`;
+  return `${vertical} ${pad(truncate(content, innerWidth, capabilities.unicode), innerWidth)} ${vertical}`;
 }
 
 function horizontal(width: number, capabilities: TerminalCapabilities, top: boolean): string {
@@ -97,6 +97,9 @@ export function renderPalette(
   const selectedIndex = Math.min(state.selected, Math.max(0, commands.length - 1));
   const selected = commands[selectedIndex];
   const lines: string[] = [];
+  const separator = capabilities.unicode ? " · " : " | ";
+  const truncateForTerminal = (value: string, maximum: number) =>
+    truncate(value, maximum, capabilities.unicode);
 
   lines.push(style.accent(horizontal(width, capabilities, true), capabilities));
   lines.push(
@@ -107,7 +110,7 @@ export function renderPalette(
   );
   lines.push(
     frameLine(
-      `${catalog.project.name}  ·  ${catalog.packageManager.name}  ·  ${String(catalog.commands.length)} commands`,
+      `${catalog.project.name}${separator}${catalog.packageManager.name}${separator}${String(catalog.commands.length)} commands`,
       width,
       capabilities,
     ),
@@ -122,14 +125,17 @@ export function renderPalette(
   lines.push(
     ` ${style.accent(capabilities.unicode ? "⌕" : "/", capabilities)}  ${
       state.query === ""
-        ? style.dim(truncate(searchLabel, width - 4), capabilities)
-        : style.strong(truncate(searchLabel, width - 4), capabilities)
+        ? style.dim(truncateForTerminal(searchLabel, width - 4), capabilities)
+        : style.strong(truncateForTerminal(searchLabel, width - 4), capabilities)
     }`,
   );
   const selectedGroup = state.groupIndex === 0 ? undefined : catalog.groups[state.groupIndex - 1];
   lines.push(
     ` ${style.dim("VIEW", capabilities)}  ${style.accent(
-      truncate(`${selectedGroup?.label ?? "All commands"} · Tab change`, width - 8),
+      truncateForTerminal(
+        `${selectedGroup?.label ?? "All commands"}${separator}Tab change`,
+        width - 8,
+      ),
       capabilities,
     )}`,
   );
@@ -138,7 +144,9 @@ export function renderPalette(
   if (state.help) {
     lines.push(style.strong(" KEYBOARD", capabilities));
     for (const instruction of [
-      "↑/↓ or Ctrl-N/Ctrl-P   move selection",
+      capabilities.unicode
+        ? "↑/↓ or Ctrl-N/Ctrl-P   move selection"
+        : "Up/Down or Ctrl-N/Ctrl-P move selection",
       "type                   filter immediately",
       "Tab / Shift-Tab        change group filter",
       "Backspace / Ctrl-U     edit / clear search",
@@ -146,15 +154,18 @@ export function renderPalette(
       "Esc                    clear search, then close",
       "?                      close this help",
     ]) {
-      lines.push(` ${truncate(instruction, width - 1)}`);
+      lines.push(` ${truncateForTerminal(instruction, width - 1)}`);
     }
   } else if (commands.length === 0) {
     lines.push(
-      style.warning(` ${truncate("No commands match this search.", width - 1)}`, capabilities),
+      style.warning(
+        ` ${truncateForTerminal("No commands match this search.", width - 1)}`,
+        capabilities,
+      ),
     );
     lines.push(
       style.dim(
-        ` ${truncate("Backspace edits the query · Esc clears it", width - 1)}`,
+        ` ${truncateForTerminal(`Backspace edits the query${separator}Esc clears it`, width - 1)}`,
         capabilities,
       ),
     );
@@ -169,9 +180,12 @@ export function renderPalette(
       const active = row.command.id === selected?.id;
       const pointer = active ? style.accent(capabilities.unicode ? "◆" : ">", capabilities) : " ";
       const workspace =
-        catalog.project.workspaceCount > 0 ? `  ·  ${row.command.workspace.name}` : "";
+        catalog.project.workspaceCount > 0 ? `${separator}${row.command.workspace.name}` : "";
       const confirmation = row.command.safety.confirmationRequired ? "  !" : "";
-      const content = truncate(`${row.command.label}${workspace}${confirmation}`, width - 7);
+      const content = truncateForTerminal(
+        `${row.command.label}${workspace}${confirmation}`,
+        width - 7,
+      );
       const rendered = active
         ? style.selected(` ${pad(content, Math.max(1, width - 7))} `, capabilities)
         : ` ${content}`;
@@ -183,34 +197,40 @@ export function renderPalette(
   const delegated =
     selected === undefined ? "" : `${catalog.packageManager.name} run ${selected.name}`;
   lines.push("");
-  lines.push(` ${style.dim("RUN", capabilities)}   ${truncate(delegated, width - 8)}`);
+  lines.push(` ${style.dim("RUN", capabilities)}   ${truncateForTerminal(delegated, width - 8)}`);
   if (!compact) {
-    lines.push(` ${style.dim("DOES", capabilities)}  ${truncate(selectedScript, width - 8)}`);
+    lines.push(
+      ` ${style.dim("DOES", capabilities)}  ${truncateForTerminal(selectedScript, width - 8)}`,
+    );
     if (selected?.description !== undefined) {
       lines.push(
-        ` ${style.dim("ABOUT", capabilities)} ${truncate(selected.description, width - 8)}`,
+        ` ${style.dim("ABOUT", capabilities)} ${truncateForTerminal(selected.description, width - 8)}`,
       );
     }
     if (selected !== undefined && catalog.project.workspaceCount > 0) {
       lines.push(
-        ` ${style.dim("IN", capabilities)}    ${truncate(selected.workspace.name, width - 8)}`,
+        ` ${style.dim("IN", capabilities)}    ${truncateForTerminal(selected.workspace.name, width - 8)}`,
       );
     }
   }
   if (selected?.safety.confirmationRequired === true) {
     lines.push(
-      ` ${style.warning("!", capabilities)} ${truncate("Confirmation required before execution", width - 4)}`,
+      ` ${style.warning("!", capabilities)} ${truncateForTerminal("Confirmation required before execution", width - 4)}`,
     );
   }
   const warning = catalog.packageManager.warnings[0];
   if (warning !== undefined) {
-    lines.push(` ${style.warning("!", capabilities)} ${truncate(warning, width - 4)}`);
+    lines.push(` ${style.warning("!", capabilities)} ${truncateForTerminal(warning, width - 4)}`);
   }
   lines.push("");
   const footer = compact
-    ? "↑↓ · type · tab · enter · esc"
-    : "↑↓ move · type search · tab filter · enter run · ? help · esc close";
-  lines.push(` ${style.dim(truncate(footer, width - 1), capabilities)}`);
+    ? capabilities.unicode
+      ? "↑↓ · type · tab · enter · esc"
+      : "Up/Down | type | tab | enter | esc"
+    : capabilities.unicode
+      ? "↑↓ move · type search · tab filter · enter run · ? help · esc close"
+      : "Up/Down move | type search | tab filter | enter run | ? help | esc close";
+  lines.push(` ${style.dim(truncateForTerminal(footer, width - 1), capabilities)}`);
 
   return lines.map((line) => `${line}\u001B[K`).join("\n");
 }

@@ -51,4 +51,18 @@ describe("affirmative", () => {
     expect(await confirmExecution(plan(), { input, output })).toBe(false);
     expect(written).toContain("configured to require confirmation");
   });
+
+  test("uses an ASCII separator when Unicode output is disabled", async () => {
+    const input = new PassThrough();
+    const output = new PassThrough();
+    let written = "";
+    output.on("data", (chunk) => {
+      written += chunk.toString();
+    });
+    input.end("yes\n");
+
+    expect(await confirmExecution(plan(), { input, output }, false)).toBe(true);
+    expect(written).toContain("Run repo | release? [y/N]");
+    expect([...written].every((character) => character.charCodeAt(0) <= 0x7f)).toBe(true);
+  });
 });

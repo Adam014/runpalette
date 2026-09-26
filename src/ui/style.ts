@@ -30,11 +30,12 @@ export const style = {
   selected: (value: string, capabilities: TerminalCapabilities) => ansi("1;7", value, capabilities),
 };
 
-export function truncate(value: string, width: number): string {
+export function truncate(value: string, width: number, unicode = true): string {
   const clean = sanitize(value);
   if (clean.length <= width) return clean;
-  if (width <= 1) return clean.slice(0, Math.max(0, width));
-  return `${clean.slice(0, Math.max(0, width - 1))}…`;
+  const marker = unicode ? "…" : "...";
+  if (width <= marker.length) return clean.slice(0, Math.max(0, width));
+  return `${clean.slice(0, Math.max(0, width - marker.length))}${marker}`;
 }
 
 export function pad(value: string, width: number): string {

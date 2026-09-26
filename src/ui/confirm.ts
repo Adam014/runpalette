@@ -9,6 +9,7 @@ export function affirmative(value: string): boolean {
 export async function confirmExecution(
   plan: ExecutionPlan,
   streams: { input?: Readable; output?: Writable } = {},
+  unicode = true,
 ): Promise<boolean> {
   const message = plan.safety.message ?? "This command is configured to require confirmation.";
   const terminal = createInterface({
@@ -17,7 +18,7 @@ export async function confirmExecution(
   });
   try {
     const answer = await terminal.question(
-      `\n${message}\nRun ${plan.workspace.name} · ${plan.script.name}? [y/N] `,
+      `\n${message}\nRun ${plan.workspace.name}${unicode ? " · " : " | "}${plan.script.name}? [y/N] `,
     );
     return affirmative(answer);
   } finally {

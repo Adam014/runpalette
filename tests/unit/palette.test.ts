@@ -137,6 +137,7 @@ describe("renderPalette", () => {
       23,
     );
     expect(cleaned).not.toContain("╭");
+    expect([...cleaned].every((character) => character.charCodeAt(0) <= 0x7f)).toBe(true);
   });
 
   test("renders a useful empty search state", () => {
