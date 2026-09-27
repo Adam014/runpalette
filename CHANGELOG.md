@@ -4,6 +4,8 @@ All notable changes to Runpalette will be documented in this file.
 
 ## Unreleased
 
+## 0.3.0 - 2026-09-27
+
 - Discover one normalized command catalog across package scripts, Justfiles,
   Taskfiles, public Make targets, project-owned Cargo aliases, and Gradle tasks.
 - Support projects without `package.json` and make command-source collisions
