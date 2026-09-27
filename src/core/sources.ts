@@ -81,7 +81,7 @@ export function captureCommand(
     const child = spawn(executable, [...args], {
       cwd,
       env: process.env,
-      detached: true,
+      detached: process.platform !== "win32",
       stdio: ["ignore", "pipe", "pipe"],
     });
     let stdout = "";

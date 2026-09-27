@@ -20,7 +20,7 @@ export function executeCaptured(
     const child = spawn(plan.executable, plan.args, {
       cwd: plan.cwd,
       env: process.env,
-      detached: true,
+      detached: process.platform !== "win32",
       shell: false,
       stdio: ["ignore", "pipe", "pipe"],
     });
