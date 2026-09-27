@@ -145,7 +145,7 @@ describe("main", () => {
     const missing = await capture(["list", "--cwd", join(root, "missing"), "--json"]);
 
     expect(empty.code).toBe(0);
-    expect(empty.stdout).toContain("No runnable package scripts found");
+    expect(empty.stdout).toContain("No runnable project commands found");
     expect(JSON.parse(missing.stdout).error.code).toBe("PROJECT_PATH_INVALID");
   });
 });

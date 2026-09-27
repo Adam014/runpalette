@@ -1,8 +1,8 @@
 # Runpalette CLI
 
-Runpalette discovers the nearest `package.json`, turns its scripts into one
-consistent catalog, and delegates execution to the project's package manager.
-It does not replace the package manager or reinterpret a script.
+Runpalette discovers the nearest supported project, turns its existing command
+sources into one consistent catalog, and delegates execution to the owning
+tool. It does not replace a package manager or task runner.
 
 ## Open the palette
 
@@ -41,13 +41,15 @@ the child receives the ordinary stdin, stdout, and stderr streams.
 runpalette list
 runpalette list --group quality
 runpalette list --workspace @acme/web
+runpalette list --source just
 runpalette run test
+runpalette run verify --source make
 runpalette run dev --workspace @acme/web
 runpalette run test -- --watch --coverage
 ```
 
-Everything after `--` is passed to the package script. npm receives its required
-separator; pnpm, Yarn, and Bun receive the arguments in their native form.
+Everything after `--` is passed as an argument array to the owning tool without
+shell interpolation. Source-specific separators are added only when required.
 
 Preview the resolved invocation without running it:
 
@@ -59,7 +61,7 @@ runpalette run build --dry-run --json
 ## Project and package-manager selection
 
 Discovery begins at the current directory and walks upward to the nearest
-`package.json`. Choose another starting point with:
+supported project marker. Choose another starting point with:
 
 ```bash
 runpalette --cwd ../another-project
@@ -130,6 +132,20 @@ runpalette run release --non-interactive --yes
 See [Configuration](./configuration.md) for every field and workspace-specific
 overrides.
 
+## Command sources
+
+Package scripts, Justfiles, Taskfiles, public Make targets, project Cargo
+aliases, and Gradle tasks can share one catalog. When two sources own the same
+name, direct execution fails closed until the source is explicit:
+
+```bash
+runpalette list --source gradle
+runpalette run test --source gradle
+```
+
+See [Command sources](./sources.md) for discovery rules and native tool
+requirements.
+
 ## Automation and agents
 
 `--json` implies non-interactive mode and writes one JSON object to stdout.
@@ -152,6 +168,9 @@ Actual command execution currently uses human stream mode. Combine `--json`
 with `--dry-run` when an agent or CI job needs an execution plan without side
 effects.
 
+For a native agent interface, `runpalette mcp` starts an MCP stdio server with
+read-only catalog and planning tools. See [MCP and agents](./mcp.md).
+
 ## Terminal fallbacks
 
 When stdin or stderr is not a TTY, no-argument Runpalette prints the same
@@ -171,8 +190,10 @@ runpalette --color=always --unicode=always
 --cwd PATH                 Start project discovery at PATH
 --workspace NAME_OR_PATH   Limit listing or choose a package for execution
 --group ID                 Limit listing and the palette to one command group
+--source NAME              Select package, just, task, make, cargo, or gradle
 --config PATH              Read an explicit Runpalette JSON configuration
 --package-manager NAME     Use npm, pnpm, yarn, or bun explicitly
+--allow-execution          Add run_command to the MCP server
 --dry-run                  Print the resolved execution plan without running
 --yes, -y                  Approve a configured confirmation non-interactively
 --json                     Emit one versioned JSON result; implies non-interactive

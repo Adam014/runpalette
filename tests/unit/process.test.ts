@@ -10,14 +10,15 @@ describe("executePlan", () => {
         script: { name: "test", value: "test", requestedAs: "test" },
         workspace: { name: "repo", path: ".", root: process.cwd(), isRoot: true },
         safety: { confirmationRequired: false },
+        source: { kind: "package", path: "package.json" },
         packageManager: "npm",
         executable: "runpalette-manager-that-does-not-exist",
         args: ["run", "test"],
         cwd: process.cwd(),
       }),
     ).rejects.toMatchObject({
-      code: "PACKAGE_MANAGER_NOT_FOUND",
-      message: "Cannot find the npm executable.",
+      code: "EXECUTABLE_NOT_FOUND",
+      message: "Cannot find the runpalette-manager-that-does-not-exist executable.",
     });
   });
 });

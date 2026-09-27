@@ -4,6 +4,18 @@ All notable changes to Runpalette will be documented in this file.
 
 ## Unreleased
 
+- Discover one normalized command catalog across package scripts, Justfiles,
+  Taskfiles, public Make targets, project-owned Cargo aliases, and Gradle tasks.
+- Support projects without `package.json` and make command-source collisions
+  explicit through `--source` and source metadata in human and JSON output.
+- Add a provider-neutral MCP stdio server with read-only catalog and planning
+  tools by default.
+- Gate MCP execution behind the server-level `--allow-execution` opt-in,
+  preserve configured confirmations per call, and bound execution time and
+  captured output.
+- Surface missing optional source tools as actionable diagnostics without
+  hiding commands discovered from other project sources.
+
 ## 0.2.2 - 2026-09-26
 
 - Return help through the versioned result envelope when `--help --json` is

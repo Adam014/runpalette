@@ -1,11 +1,10 @@
-import { readFile } from "node:fs/promises";
-import { relative } from "node:path";
 import process from "node:process";
-import { catalogForOutput, createCatalog, filterCatalog } from "../core/catalog.js";
-import { loadConfig } from "../core/config.js";
+import { catalogForOutput } from "../core/catalog.js";
 import { RunpaletteError } from "../core/errors.js";
-import { createExecutionPlan } from "../core/plan.js";
-import { discoverProject } from "../core/project.js";
+import { createExecutionPlan, planForOutput } from "../core/plan.js";
+import { catalogWarnings, loadCatalog } from "../core/service.js";
+import { packageVersion } from "../core/version.js";
+import { runMcpServer } from "../mcp/server.js";
 import { executePlan } from "../process/run.js";
 import { confirmExecution } from "../ui/confirm.js";
 import { openPalette } from "../ui/palette.js";
@@ -14,16 +13,6 @@ import { style } from "../ui/style.js";
 import { terminalCapabilities } from "../ui/terminal.js";
 import { parseArguments } from "./arguments.js";
 import { renderHelp } from "./help.js";
-
-async function packageVersion(): Promise<string> {
-  try {
-    const url = new URL("../../package.json", import.meta.url);
-    const parsed = JSON.parse(await readFile(url, "utf8")) as { version?: unknown };
-    return typeof parsed.version === "string" ? parsed.version : "unknown";
-  } catch {
-    return "unknown";
-  }
-}
 
 function success(command: string, data: unknown, warnings: readonly string[] = []): string {
   return `${JSON.stringify({ schemaVersion: 1, ok: true, command, data, warnings })}\n`;
@@ -73,35 +62,38 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       process.stdout.write(parsed.json ? success("version", { version }) : `${version}\n`);
       return 0;
     }
+    if (parsed.command === "mcp") {
+      await runMcpServer({
+        cwd: parsed.cwd,
+        ...(parsed.config === undefined ? {} : { config: parsed.config }),
+        ...(parsed.packageManager === undefined ? {} : { packageManager: parsed.packageManager }),
+        allowExecution: parsed.allowExecution,
+      });
+      return 0;
+    }
 
-    const project = await discoverProject({
+    const loaded = await loadCatalog({
       cwd: parsed.cwd,
       ...(parsed.packageManager === undefined ? {} : { packageManager: parsed.packageManager }),
+      ...(parsed.config === undefined ? {} : { config: parsed.config }),
+      ...(parsed.group === undefined ? {} : { group: parsed.group }),
+      ...(parsed.workspace === undefined ? {} : { workspace: parsed.workspace }),
+      ...(parsed.source === undefined ? {} : { source: parsed.source }),
     });
-    const config = await loadConfig({
-      root: project.root,
-      ...(parsed.config === undefined ? {} : { path: parsed.config }),
-    });
-    const completeCatalog = createCatalog(project, config);
-    const catalog =
-      parsed.command === "run"
-        ? completeCatalog
-        : filterCatalog(completeCatalog, {
-            ...(parsed.group === undefined ? {} : { group: parsed.group }),
-            ...(parsed.workspace === undefined ? {} : { workspace: parsed.workspace }),
-          });
+    const completeCatalog = loaded.complete;
+    const catalog = parsed.command === "run" ? completeCatalog : loaded.filtered;
     if (parsed.command === "list" || (parsed.command === "home" && !capabilities.interactive)) {
       if (parsed.json) {
         process.stdout.write(
-          success(
-            "list",
-            catalogForOutput(catalog, process.cwd()),
-            catalog.packageManager.warnings,
-          ),
+          success("list", catalogForOutput(catalog, process.cwd()), catalogWarnings(catalog)),
         );
       } else {
         process.stdout.write(renderPlainCatalog(catalog, capabilities));
-        for (const warning of catalog.packageManager.warnings) {
+        for (const diagnostic of catalog.diagnostics) {
+          process.stderr.write(`! ${diagnostic.message}\n`);
+          if (diagnostic.hint !== undefined) process.stderr.write(`  ${diagnostic.hint}\n`);
+        }
+        for (const warning of catalog.packageManager?.warnings ?? []) {
           process.stderr.write(`! ${warning}\n`);
         }
       }
@@ -110,6 +102,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
 
     let scriptName = parsed.scriptName;
     let selectedWorkspace = parsed.workspace;
+    let selectedSource = parsed.source;
     if (parsed.command === "home") {
       const selection = await openPalette({
         catalog,
@@ -124,6 +117,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       }
       scriptName = selection.command.name;
       selectedWorkspace = selection.command.workspace.path;
+      selectedSource = selection.command.source.kind;
     }
 
     if (scriptName === undefined) throw new Error("Command selection invariant failed.");
@@ -132,15 +126,12 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       scriptName,
       parsed.scriptArgs,
       selectedWorkspace,
+      selectedSource,
     );
     if (parsed.dryRun) {
       process.stdout.write(
         parsed.json
-          ? success(
-              "run",
-              catalogForOutputPlan(plan, process.cwd()),
-              catalog.packageManager.warnings,
-            )
+          ? success("run", planForOutput(plan, process.cwd()), catalogWarnings(catalog))
           : renderPlan(plan),
       );
       return 0;
@@ -182,18 +173,4 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
     }
     return result.code;
   }
-}
-
-function catalogForOutputPlan(
-  plan: ReturnType<typeof createExecutionPlan>,
-  invocationCwd: string,
-): ReturnType<typeof createExecutionPlan> {
-  return {
-    ...plan,
-    cwd: relative(invocationCwd, plan.cwd) || ".",
-    workspace: {
-      ...plan.workspace,
-      root: relative(invocationCwd, plan.workspace.root) || ".",
-    },
-  };
 }

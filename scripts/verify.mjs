@@ -2,6 +2,8 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import process from "node:process";
+import { Client } from "@modelcontextprotocol/client";
+import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
 import spawn from "cross-spawn";
 
 const color = process.stdout.isTTY && process.env.NO_COLOR === undefined;
@@ -46,9 +48,12 @@ async function packedArtifact() {
       "README.md",
       "LICENSE",
       "docs/CLI.md",
+      "docs/mcp.md",
+      "docs/sources.md",
       "dist/cli.js",
       "dist/cli/main.js",
       "dist/core/catalog.js",
+      "dist/mcp/server.js",
       "dist/ui/palette.js",
     ]) {
       if (!paths.has(required)) throw new Error(`Packed artifact is missing ${required}`);
@@ -82,6 +87,35 @@ async function packedArtifact() {
     );
     if (!help.includes("Open the interactive command palette")) {
       throw new Error("Installed CLI smoke test returned unexpected help output");
+    }
+
+    const transport = new StdioClientTransport({
+      command: process.execPath,
+      args: [join(consumer, "node_modules/runpalette/dist/cli.js"), "mcp"],
+      cwd: consumer,
+      stderr: "pipe",
+    });
+    const client = new Client({ name: "runpalette-verifier", version: "1.0.0" });
+    let protocolStderr = "";
+    transport.stderr?.on("data", (chunk) => {
+      protocolStderr += chunk.toString();
+    });
+    try {
+      await client.connect(transport);
+      const tools = await client.listTools();
+      const names = tools.tools.map(({ name }) => name);
+      if (names.join(",") !== "list_commands,plan_command") {
+        throw new Error(`Installed MCP server exposed unexpected tools: ${names.join(", ")}`);
+      }
+      const catalog = await client.callTool({ name: "list_commands", arguments: {} });
+      if (catalog.isError === true || catalog.structuredContent?.ok !== true) {
+        throw new Error("Installed MCP server did not return a valid command catalog");
+      }
+    } finally {
+      await client.close();
+    }
+    if (protocolStderr.trim() !== "") {
+      throw new Error(`Installed MCP server wrote unexpected diagnostics:\n${protocolStderr}`);
     }
   } finally {
     await rm(temporary, { recursive: true, force: true });

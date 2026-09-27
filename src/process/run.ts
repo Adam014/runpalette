@@ -15,9 +15,11 @@ export async function executePlan(plan: ExecutionPlan): Promise<number> {
       if ((error as NodeJS.ErrnoException).code === "ENOENT") {
         reject(
           new RunpaletteError(
-            "PACKAGE_MANAGER_NOT_FOUND",
-            `Cannot find the ${plan.packageManager} executable.`,
-            `Install ${plan.packageManager} or select another manager with --package-manager.`,
+            "EXECUTABLE_NOT_FOUND",
+            `Cannot find the ${plan.executable} executable.`,
+            plan.packageManager === undefined
+              ? `Install the tool required by the ${plan.source.kind} command source.`
+              : `Install ${plan.packageManager} or select another manager with --package-manager.`,
           ),
         );
         return;

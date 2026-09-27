@@ -1,11 +1,24 @@
 import { describe, expect, test } from "bun:test";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, unlink, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
 import { RunpaletteError } from "../../src/core/errors.js";
 import { discoverProject, parseManifest } from "../../src/core/project.js";
 import { createProject } from "../helpers/project.js";
 
 describe("discoverProject", () => {
+  test("discovers a pure non-JavaScript project from a nested directory", async () => {
+    const root = await createProject({ manifest: {} });
+    await unlink(join(root, "package.json"));
+    await writeFile(join(root, "Makefile"), ".PHONY: test\ntest:\n\t@true\n");
+    const nested = join(root, "src", "nested");
+    await mkdir(nested, { recursive: true });
+
+    const project = await discoverProject({ cwd: nested });
+    expect(project.root).toBe(root);
+    expect(project.manifest).toBeUndefined();
+    expect(project.packageManager).toBeUndefined();
+    expect(project.workspaces).toEqual([]);
+  });
   test("walks upward and respects the declared package manager", async () => {
     const root = await createProject({
       manifest: {
@@ -36,9 +49,9 @@ describe("discoverProject", () => {
 
     const project = await discoverProject({ cwd: root });
 
-    expect(project.packageManager.name).toBe("bun");
-    expect(project.packageManager.evidence.detail).toBe("bun.lock");
-    expect(project.packageManager.warnings[0]).toContain("Conflicting lockfiles");
+    expect(project.packageManager?.name).toBe("bun");
+    expect(project.packageManager?.evidence.detail).toBe("bun.lock");
+    expect(project.packageManager?.warnings[0]).toContain("Conflicting lockfiles");
   });
 
   test("explicit package manager overrides project metadata", async () => {

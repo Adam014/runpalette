@@ -1,6 +1,6 @@
 # Compatibility
 
-Runpalette 0.2.x is the current public release line. Compatibility is
+Runpalette 0.3.x is the current public release line. Compatibility is
 claimed only after the packed CLI passes its documented contract on that
 environment.
 
@@ -17,3 +17,20 @@ and executes it from the selected workspace before a release can pass.
 The terminal UI has explicit plain-text, ASCII, no-color, narrow-terminal, and
 non-interactive paths. Linux, macOS, and Windows run the same source, build,
 test, and packed npm-consumer contract in CI.
+
+## Command sources
+
+| Source | Discovery contract | Execution owner |
+| --- | --- | --- |
+| `package.json` | root and workspace `scripts` | detected npm, pnpm, Yarn, or Bun |
+| Just | `just --dump --dump-format json` | `just` |
+| Task | `task --list-all --json` | `task` |
+| Make | static `.PHONY` and `##`-documented targets | `make` |
+| Cargo | project aliases from `.cargo/config.toml` or `.cargo/config` | `cargo` |
+| Gradle | wrapper-preferred `tasks --all` metadata | project wrapper or `gradle` |
+
+Make discovery never evaluates the Makefile. Just, Task, and Gradle use their
+native metadata commands and therefore require the corresponding executable.
+Runpalette reports a diagnostic when an optional tool is unavailable and keeps
+commands from every other source usable. See [Command sources](./docs/sources.md)
+for exact behavior and trust guidance.

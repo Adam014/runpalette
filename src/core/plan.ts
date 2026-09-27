@@ -1,17 +1,7 @@
+import { relative } from "node:path";
 import { commandMatchesWorkspace } from "./catalog.js";
 import { RunpaletteError } from "./errors.js";
-import type { CatalogCommand, CommandCatalog, ExecutionPlan, PackageManagerName } from "./model.js";
-
-function managerArguments(
-  packageManager: PackageManagerName,
-  scriptName: string,
-  scriptArgs: readonly string[],
-): string[] {
-  if (packageManager === "npm") {
-    return ["run", scriptName, ...(scriptArgs.length === 0 ? [] : ["--", ...scriptArgs])];
-  }
-  return ["run", scriptName, ...scriptArgs];
-}
+import type { CatalogCommand, CommandCatalog, ExecutionPlan } from "./model.js";
 
 function distance(left: string, right: string): number {
   const previous = Array.from({ length: right.length + 1 }, (_, index) => index);
@@ -41,24 +31,28 @@ function selectCommand(
   catalog: CommandCatalog,
   requested: string,
   workspace?: string,
+  source?: string,
 ): CatalogCommand {
   const matches = catalog.commands.filter(
     (candidate) =>
       (candidate.name === requested || candidate.aliases.includes(requested)) &&
-      (workspace === undefined || commandMatchesWorkspace(candidate, workspace)),
+      (workspace === undefined || commandMatchesWorkspace(candidate, workspace)) &&
+      (source === undefined || candidate.source.kind === source),
   );
   if (matches.length === 1 && matches[0] !== undefined) return matches[0];
   if (matches.length > 1) {
     throw new RunpaletteError(
       "COMMAND_AMBIGUOUS",
-      `Command ${JSON.stringify(requested)} exists in multiple workspaces.`,
-      `Choose one with --workspace: ${matches.map((command) => command.workspace.name).join(", ")}.`,
+      `Command ${JSON.stringify(requested)} exists in multiple workspaces or sources and is ambiguous.`,
+      `Choose a source with --source or a workspace with --workspace: ${matches
+        .map((command) => `${command.source.kind}:${command.workspace.name}`)
+        .join(", ")}.`,
     );
   }
   const nearest = suggestions(catalog, requested);
   throw new RunpaletteError(
     "COMMAND_NOT_FOUND",
-    `Script or alias ${JSON.stringify(requested)} was not found${workspace === undefined ? "" : ` in workspace ${workspace}`}.`,
+    `Command or alias ${JSON.stringify(requested)} was not found${workspace === undefined ? "" : ` in workspace ${workspace}`}${source === undefined ? "" : ` from ${source}`}.`,
     nearest.length === 0
       ? "Run `runpalette list` to inspect available commands."
       : `Closest commands: ${nearest.join(", ")}. Run \`runpalette list\` for the complete catalog.`,
@@ -70,17 +64,42 @@ export function createExecutionPlan(
   scriptName: string,
   scriptArgs: readonly string[],
   workspace?: string,
+  source?: string,
 ): ExecutionPlan {
-  const command = selectCommand(catalog, scriptName, workspace);
+  const command = selectCommand(catalog, scriptName, workspace, source);
+  const separator = command.execution.forwardedArgsSeparator;
   return {
     schemaVersion: 1,
     command: "run",
     script: { name: command.name, value: command.script, requestedAs: scriptName },
     workspace: command.workspace,
     safety: command.safety,
-    packageManager: catalog.packageManager.name,
-    executable: catalog.packageManager.name,
-    args: managerArguments(catalog.packageManager.name, command.name, scriptArgs),
+    source: command.source,
+    ...(catalog.packageManager === undefined
+      ? {}
+      : { packageManager: catalog.packageManager.name }),
+    executable: command.execution.executable,
+    args: [
+      ...command.execution.args,
+      ...(scriptArgs.length === 0
+        ? []
+        : [...(separator === undefined ? [] : [separator]), ...scriptArgs]),
+    ],
     cwd: command.workspace.root,
+  };
+}
+
+export function planForOutput(plan: ExecutionPlan, invocationCwd: string): ExecutionPlan {
+  return {
+    ...plan,
+    cwd: relative(invocationCwd, plan.cwd) || ".",
+    workspace: {
+      ...plan.workspace,
+      root: relative(invocationCwd, plan.workspace.root) || ".",
+    },
+    source: {
+      ...plan.source,
+      path: relative(invocationCwd, plan.source.path) || ".",
+    },
   };
 }

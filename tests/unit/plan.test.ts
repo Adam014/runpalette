@@ -13,7 +13,12 @@ function catalog(packageManager: PackageManagerName): CommandCatalog {
     order: 0,
     safety: { confirmationRequired: false },
     workspace: { name: "repo", path: ".", root: "/repo", isRoot: true },
-    source: { kind: "package.json" as const, path: "/repo/package.json" },
+    source: { kind: "package" as const, path: "/repo/package.json" },
+    execution: {
+      executable: packageManager,
+      args: ["run", "test"],
+      ...(packageManager === "npm" ? { forwardedArgsSeparator: "--" } : {}),
+    },
   };
   return {
     schemaVersion: 1,
@@ -23,6 +28,8 @@ function catalog(packageManager: PackageManagerName): CommandCatalog {
       evidence: { source: "explicit", detail: packageManager },
       warnings: [],
     },
+    sources: ["package"],
+    diagnostics: [],
     groups: [{ id: "quality", label: "Test & quality", commands: [command] }],
     commands: [command],
     hidden: [],
@@ -45,7 +52,7 @@ describe("createExecutionPlan", () => {
 
   test("returns an actionable missing-command error", () => {
     expect(() => createExecutionPlan(catalog("npm"), "build", [])).toThrow(
-      'Script or alias "build" was not found',
+      'Command or alias "build" was not found',
     );
   });
 
