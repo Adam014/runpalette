@@ -1,6 +1,6 @@
 {
   "name": "runpalette",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "A project command palette for discovering and running the right script.",
   "type": "module",
   "bin": {
@@ -39,6 +39,12 @@
     "cli",
     "command-palette",
     "developer-tools",
+    "mcp",
+    "makefile",
+    "justfile",
+    "taskfile",
+    "gradle",
+    "cargo",
     "npm-scripts",
     "package-scripts",
     "task-runner"
@@ -59,14 +65,18 @@
   "homepage": "https://github.com/Adam014/runpalette#readme",
   "devDependencies": {
     "@biomejs/biome": "2.5.12",
+    "@modelcontextprotocol/client": "2.1.0",
     "@types/bun": "1.4.2",
     "@types/cross-spawn": "6.0.6",
     "@types/node": "22.20.2",
     "typescript": "7.0.2"
   },
   "dependencies": {
+    "@modelcontextprotocol/server": "2.1.0",
     "cross-spawn": "7.0.6",
     "fast-glob": "3.3.3",
-    "yaml": "2.9.1"
+    "smol-toml": "1.9.0",
+    "yaml": "2.9.1",
+    "zod": "4.6.5"
   }
 }

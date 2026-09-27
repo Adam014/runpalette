@@ -9,6 +9,7 @@ import {
 } from "../../src/core/catalog.js";
 import { parseConfig } from "../../src/core/config.js";
 import type { ProjectContext } from "../../src/core/model.js";
+import { createExecutionPlan } from "../../src/core/plan.js";
 
 function project(scripts: Record<string, string>): ProjectContext {
   return {
@@ -167,6 +168,26 @@ describe("configured and workspace catalogs", () => {
     expect(filterCatalog(catalog, { workspace: "root" }).commands).toHaveLength(2);
     expect(() => filterCatalog(catalog, { group: "missing" })).toThrow("was not found");
     expect(() => filterCatalog(catalog, { workspace: "missing" })).toThrow("was not found");
+  });
+
+  test("aggregates source-neutral commands and resolves collisions explicitly", () => {
+    const value = createCatalog(project({ test: "vitest" }), undefined, {
+      diagnostics: [],
+      commands: [
+        {
+          name: "test",
+          description: "Run the Make test target",
+          script: "make test",
+          source: { kind: "make", path: "/workspace/example/Makefile" },
+          execution: { executable: "make", args: ["test"] },
+        },
+      ],
+    });
+    expect(value.sources).toEqual(["package", "make"]);
+    expect(filterCatalog(value, { source: "make" }).commands).toHaveLength(1);
+    expect(() => filterCatalog(value, { source: "cargo" })).toThrow("was not found");
+    expect(() => createExecutionPlan(value, "test", [])).toThrow("ambiguous");
+    expect(createExecutionPlan(value, "test", [], undefined, "make").executable).toBe("make");
   });
 
   test("emits invocation-relative paths without mutating the internal catalog", () => {

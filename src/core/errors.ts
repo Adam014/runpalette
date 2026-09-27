@@ -11,8 +11,10 @@ export type RunpaletteErrorCode =
   | "COMMAND_AMBIGUOUS"
   | "WORKSPACE_NOT_FOUND"
   | "GROUP_NOT_FOUND"
+  | "SOURCE_NOT_FOUND"
   | "CONFIRMATION_REQUIRED"
   | "PACKAGE_MANAGER_NOT_FOUND"
+  | "EXECUTABLE_NOT_FOUND"
   | "PACKAGE_MANAGER_INVALID";
 
 export class RunpaletteError extends Error {

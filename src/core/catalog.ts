@@ -5,9 +5,11 @@ import type {
   CatalogCommand,
   CommandCatalog,
   CommandGroupId,
+  DiscoveredCommand,
   HiddenCommand,
   ProjectContext,
   ProjectWorkspace,
+  SourceDiagnostic,
 } from "./model.js";
 import { COMMAND_GROUPS } from "./model.js";
 
@@ -116,6 +118,9 @@ function title(value: string): string {
 }
 
 function rootWorkspace(project: ProjectContext): ProjectWorkspace {
+  if (project.manifest === undefined || project.manifestPath === undefined) {
+    throw new Error("Package workspace requested for a project without package.json.");
+  }
   return {
     name: project.name,
     root: project.root,
@@ -152,16 +157,23 @@ function resolveDefault(commands: readonly CatalogCommand[], selector: string): 
   }
   throw new RunpaletteError(
     "CONFIG_INVALID",
-    `Default command ${JSON.stringify(selector)} is ambiguous across workspaces.`,
-    "Qualify it as workspace#script.",
+    `Default command ${JSON.stringify(selector)} is ambiguous across workspaces or sources.`,
+    "Qualify a workspace default as workspace#command, or choose a name unique across command sources.",
   );
 }
 
 export function createCatalog(
   project: ProjectContext,
   config: RunpaletteConfig = { schemaVersion: 1, groups: {}, commands: {} },
+  discovered: { commands: DiscoveredCommand[]; diagnostics: SourceDiagnostic[] } = {
+    commands: [],
+    diagnostics: [],
+  },
 ): CommandCatalog {
-  const packages = [rootWorkspace(project), ...project.workspaces];
+  const packages =
+    project.manifest === undefined || project.manifestPath === undefined
+      ? []
+      : [rootWorkspace(project), ...project.workspaces];
   const commands: CatalogCommand[] = [];
   const hidden: HiddenCommand[] = [];
   let manifestOrder = 0;
@@ -203,10 +215,44 @@ export function createCatalog(
           root: workspace.root,
           isRoot: workspace.relativePath === ".",
         },
-        source: { kind: "package.json", path: workspace.manifestPath },
+        source: { kind: "package", path: workspace.manifestPath },
+        execution: {
+          executable: project.packageManager?.name ?? "npm",
+          args: ["run", name],
+          ...(project.packageManager?.name === "npm" ? { forwardedArgsSeparator: "--" } : {}),
+        },
       });
       manifestOrder += 1;
     }
+  }
+
+  for (const sourceCommand of discovered.commands) {
+    const configured = commandConfig(config, project.name, ".", sourceCommand.name);
+    if (configured.hidden === true) {
+      hidden.push({ name: sourceCommand.name, workspace: ".", reason: "config" });
+      continue;
+    }
+    const confirm = configured.confirm;
+    commands.push({
+      id: `${sourceCommand.source.kind}:.:${sourceCommand.name}`,
+      name: sourceCommand.name,
+      label: configured.label ?? sourceCommand.label ?? sourceCommand.name,
+      ...((configured.description ?? sourceCommand.description) === undefined
+        ? {}
+        : { description: configured.description ?? sourceCommand.description }),
+      aliases: configured.aliases ?? [],
+      script: sourceCommand.script,
+      group: configured.group ?? classifyCommand(sourceCommand.name),
+      order: configured.order ?? manifestOrder,
+      safety: {
+        confirmationRequired: confirm === true || typeof confirm === "string",
+        ...(typeof confirm === "string" ? { message: confirm } : {}),
+      },
+      workspace: { name: project.name, path: ".", root: project.root, isRoot: true },
+      source: sourceCommand.source,
+      execution: sourceCommand.execution,
+    });
+    manifestOrder += 1;
   }
 
   for (const workspace of packages) {
@@ -214,7 +260,8 @@ export function createCatalog(
     const selectors = new Map<string, string>();
     for (const command of local) {
       for (const selector of [command.name, ...command.aliases]) {
-        const existing = selectors.get(selector);
+        const key = `${command.source.kind}:${selector}`;
+        const existing = selectors.get(key);
         if (existing !== undefined) {
           throw new RunpaletteError(
             "CONFIG_INVALID",
@@ -222,7 +269,7 @@ export function createCatalog(
             "Use unique aliases within each workspace.",
           );
         }
-        selectors.set(selector, command.name);
+        selectors.set(key, command.name);
       }
     }
   }
@@ -265,10 +312,12 @@ export function createCatalog(
     project: {
       name: project.name,
       root: project.root,
-      manifestPath: project.manifestPath,
       workspaceCount: project.workspaces.length,
+      ...(project.manifestPath === undefined ? {} : { manifestPath: project.manifestPath }),
     },
-    packageManager: project.packageManager,
+    ...(project.packageManager === undefined ? {} : { packageManager: project.packageManager }),
+    sources: [...new Set(commands.map((command) => command.source.kind))],
+    diagnostics: discovered.diagnostics,
     groups,
     commands,
     hidden,
@@ -280,7 +329,7 @@ export function createCatalog(
 
 export function filterCatalog(
   catalog: CommandCatalog,
-  options: { group?: string; workspace?: string },
+  options: { group?: string; workspace?: string; source?: string },
 ): CommandCatalog {
   if (options.group !== undefined && !catalog.groups.some((group) => group.id === options.group)) {
     throw new RunpaletteError(
@@ -300,10 +349,21 @@ export function filterCatalog(
       `Available workspaces: ${available.join(", ") || "root only"}.`,
     );
   }
+  if (
+    options.source !== undefined &&
+    !catalog.commands.some((command) => command.source.kind === options.source)
+  ) {
+    throw new RunpaletteError(
+      "SOURCE_NOT_FOUND",
+      `Command source ${JSON.stringify(options.source)} was not found.`,
+      `Available sources: ${catalog.sources.join(", ") || "none"}.`,
+    );
+  }
   const commands = catalog.commands.filter(
     (command) =>
       (options.group === undefined || command.group === options.group) &&
-      (options.workspace === undefined || matchesWorkspace(command, options.workspace)),
+      (options.workspace === undefined || matchesWorkspace(command, options.workspace)) &&
+      (options.source === undefined || command.source.kind === options.source),
   );
   const ids = new Set(commands.map((command) => command.id));
   const filtered: CommandCatalog = {
@@ -316,6 +376,7 @@ export function filterCatalog(
       }))
       .filter((group) => group.commands.length > 0),
     commands,
+    sources: [...new Set(commands.map((command) => command.source.kind))],
     ...(catalog.defaultCommandId !== undefined && ids.has(catalog.defaultCommandId)
       ? { defaultCommandId: catalog.defaultCommandId }
       : {}),
@@ -328,7 +389,6 @@ export function filterCatalog(
 
 export function catalogForOutput(catalog: CommandCatalog, invocationCwd: string): CommandCatalog {
   const relativeRoot = relative(invocationCwd, catalog.project.root) || ".";
-  const relativeManifest = relative(invocationCwd, catalog.project.manifestPath);
   const commandForOutput = (command: CatalogCommand): CatalogCommand => ({
     ...command,
     workspace: {
@@ -339,7 +399,13 @@ export function catalogForOutput(catalog: CommandCatalog, invocationCwd: string)
   });
   return {
     ...catalog,
-    project: { ...catalog.project, root: relativeRoot, manifestPath: relativeManifest },
+    project: {
+      ...catalog.project,
+      root: relativeRoot,
+      ...(catalog.project.manifestPath === undefined
+        ? {}
+        : { manifestPath: relative(invocationCwd, catalog.project.manifestPath) }),
+    },
     groups: catalog.groups.map((group) => ({
       ...group,
       commands: group.commands.map(commandForOutput),

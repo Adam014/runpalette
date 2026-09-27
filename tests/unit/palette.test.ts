@@ -14,7 +14,8 @@ function catalog(): CommandCatalog {
     order: 0,
     safety: { confirmationRequired: false },
     workspace: { name: "app", path: ".", root: "/workspace/app", isRoot: true },
-    source: { kind: "package.json" as const, path: "/workspace/app/package.json" },
+    source: { kind: "package" as const, path: "/workspace/app/package.json" },
+    execution: { executable: "pnpm", args: ["run", "dev"] },
   };
   const testUnit = {
     id: "package:test:unit",
@@ -26,7 +27,8 @@ function catalog(): CommandCatalog {
     order: 1,
     safety: { confirmationRequired: false },
     workspace: { name: "app", path: ".", root: "/workspace/app", isRoot: true },
-    source: { kind: "package.json" as const, path: "/workspace/app/package.json" },
+    source: { kind: "package" as const, path: "/workspace/app/package.json" },
+    execution: { executable: "pnpm", args: ["run", "test:unit"] },
   };
   const commands = [dev, testUnit];
   return {
@@ -42,6 +44,8 @@ function catalog(): CommandCatalog {
       evidence: { source: "lockfile", detail: "pnpm-lock.yaml" },
       warnings: [],
     },
+    sources: ["package"],
+    diagnostics: [],
     groups: [
       { id: "develop", label: "Start & develop", commands: [dev] },
       { id: "quality", label: "Test & quality", commands: [testUnit] },
@@ -160,7 +164,8 @@ describe("renderPalette", () => {
       throw new Error("Expected palette fixture commands");
     }
     value.defaultCommandId = defaultCommand.id;
-    value.packageManager.warnings = ["Multiple lockfiles detected"];
+    if (value.packageManager !== undefined)
+      value.packageManager.warnings = ["Multiple lockfiles detected"];
     command.label = "Start web";
     command.description = "Open the frontend";
     command.workspace = {

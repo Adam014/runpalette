@@ -14,6 +14,7 @@ function plan(message?: string): ExecutionPlan {
     script: { name: "release", value: "npm publish", requestedAs: "release" },
     workspace: { name: "repo", path: ".", root: "/repo", isRoot: true },
     safety: { confirmationRequired: true, ...(message === undefined ? {} : { message }) },
+    source: { kind: "package", path: "/repo/package.json" },
   };
 }
 

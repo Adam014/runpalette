@@ -7,17 +7,27 @@ export function renderPlainCatalog(
   capabilities: TerminalCapabilities,
 ): string {
   const separator = capabilities.unicode ? " · " : " | ";
+  const sourceLabel =
+    [
+      ...(catalog.packageManager === undefined ? [] : [catalog.packageManager.name]),
+      ...catalog.sources.filter((source) => source !== "package"),
+    ].join("+") || "no sources";
   const lines = [
     style.strong(
-      `${sanitize(catalog.project.name)}${separator}${catalog.packageManager.name}${separator}${String(catalog.commands.length)} commands`,
+      `${sanitize(catalog.project.name)}${separator}${sourceLabel}${separator}${String(catalog.commands.length)} commands`,
       capabilities,
     ),
   ];
   for (const group of catalog.groups) {
     lines.push("", style.accent(group.label, capabilities));
     const workspaceAware = catalog.project.workspaceCount > 0;
+    const sourceAware = catalog.sources.length > 1;
     const names = group.commands.map((command) =>
-      workspaceAware ? `${command.workspace.name}${separator}${command.label}` : command.label,
+      [
+        ...(sourceAware ? [command.source.kind] : []),
+        ...(workspaceAware ? [command.workspace.name] : []),
+        command.label,
+      ].join(separator),
     );
     const width = Math.min(28, Math.max(...names.map((name) => name.length), 1));
     for (const [index, command] of group.commands.entries()) {
@@ -33,7 +43,11 @@ export function renderPlainCatalog(
     }
   }
   if (catalog.commands.length === 0) {
-    lines.push("", "No runnable package scripts found.", "Add scripts to package.json.");
+    lines.push(
+      "",
+      "No runnable project commands found.",
+      "Add commands to a supported project source.",
+    );
   }
   return `${lines.join("\n")}\n`;
 }

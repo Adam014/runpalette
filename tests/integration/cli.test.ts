@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { rm } from "node:fs/promises";
-import { join } from "node:path";
+import { rm, unlink, writeFile } from "node:fs/promises";
+import { join, relative } from "node:path";
 import { createProject } from "../helpers/project.js";
 
 const cli = join(import.meta.dir, "../../src/cli.ts");
@@ -36,6 +36,45 @@ function run(args: readonly string[]): { exitCode: number; stdout: string; stder
 }
 
 describe("Runpalette CLI", () => {
+  test("discovers, plans, and executes a pure Make project", async () => {
+    const root = await createProject({ manifest: {} });
+    temporaryProjects.push(root);
+    await unlink(join(root, "package.json"));
+    await writeFile(
+      join(root, "Makefile"),
+      ".PHONY: verify\nverify: ## Verify the native project\n\t@printf 'make-ready'\n",
+    );
+
+    const listed = run(["list", "--cwd", root, "--json"]);
+    const catalog = JSON.parse(listed.stdout) as {
+      data: { sources: string[]; packageManager?: unknown; commands: Array<{ name: string }> };
+    };
+    expect(listed.exitCode).toBe(0);
+    expect(catalog.data.sources).toEqual(["make"]);
+    expect(catalog.data.packageManager).toBeUndefined();
+    expect(catalog.data.commands.map(({ name }) => name)).toEqual(["verify"]);
+
+    const planned = run([
+      "run",
+      "verify",
+      "--source",
+      "make",
+      "--cwd",
+      root,
+      "--dry-run",
+      "--json",
+    ]);
+    expect(JSON.parse(planned.stdout).data).toMatchObject({
+      executable: "make",
+      args: ["verify"],
+      source: { kind: "make", path: relative(import.meta.dir, join(root, "Makefile")) },
+    });
+
+    const executed = run(["run", "verify", "--source", "make", "--cwd", root]);
+    expect(executed.exitCode).toBe(0);
+    expect(executed.stdout).toContain("make-ready");
+  });
+
   test("returns one stable JSON catalog without terminal decoration", async () => {
     const root = await project({ dev: "vite", predev: "node prep.js", test: "vitest" });
     const result = run(["list", "--json", "--cwd", root]);

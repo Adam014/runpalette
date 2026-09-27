@@ -2,11 +2,11 @@
 
 Runpalette works without configuration. Add `runpalette.json` at the workspace
 root only when the team wants clearer names, stable aliases, deliberate
-ordering, or an execution safeguard around an existing package script.
+ordering, or an execution safeguard around an existing project command.
 
-Configuration changes how scripts are presented and selected. The package
-manager still owns execution, so Runpalette does not duplicate script bodies or
-introduce a second task format.
+Configuration changes how commands are presented and selected. The original
+package manager or task tool still owns execution, so Runpalette does not
+duplicate command bodies or introduce a second task format.
 
 ## Start a configuration
 
@@ -60,7 +60,7 @@ or hyphens and may define a `label` and `order` under `groups`.
 
 ## Defaults and workspace overrides
 
-`default` selects the initial palette entry by script name or alias. In a
+`default` selects the initial palette entry by command name or alias. In a
 monorepo, qualify an ambiguous default as `workspace#script`:
 
 ```json
@@ -84,6 +84,10 @@ monorepo, qualify an ambiguous default as `workspace#script`:
 A workspace override inherits unspecified fields from the general script
 entry. Selectors accept either the package name or its root-relative path.
 
+General command metadata also applies to matching names discovered from
+non-package sources. If the same name exists in multiple sources, keep the
+palette default unambiguous and use `--source` for direct execution.
+
 ## Confirmations in automation
 
 A command with `confirm` asks for `y` or `yes` in an interactive terminal.
@@ -96,7 +100,7 @@ runpalette run release --non-interactive --yes
 ```
 
 `--yes` approves only the configured Runpalette confirmation. It does not alter
-prompts or safety behavior implemented by the underlying package script.
+prompts or safety behavior implemented by the underlying project command.
 
 ## Alternate configuration files
 

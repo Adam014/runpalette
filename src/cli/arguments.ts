@@ -1,9 +1,9 @@
 import { RunpaletteError } from "../core/errors.js";
-import type { PackageManagerName } from "../core/model.js";
-import { PACKAGE_MANAGERS } from "../core/model.js";
+import type { CommandSourceKind, PackageManagerName } from "../core/model.js";
+import { COMMAND_SOURCES, PACKAGE_MANAGERS } from "../core/model.js";
 
 export type Preference = "auto" | "always" | "never";
-export type CliCommand = "home" | "list" | "run" | "help" | "version";
+export type CliCommand = "home" | "list" | "run" | "mcp" | "help" | "version";
 
 export interface CliArguments {
   command: CliCommand;
@@ -11,11 +11,13 @@ export interface CliArguments {
   packageManager?: PackageManagerName;
   workspace?: string;
   group?: string;
+  source?: CommandSourceKind;
   config?: string;
   json: boolean;
   nonInteractive: boolean;
   dryRun: boolean;
   yes: boolean;
+  allowExecution: boolean;
   color: Preference;
   unicode: Preference;
   scriptName?: string;
@@ -47,6 +49,7 @@ export function parseArguments(args: readonly string[], processCwd: string): Cli
     nonInteractive: false,
     dryRun: false,
     yes: false,
+    allowExecution: false,
     color: "auto",
     unicode: "auto",
     scriptArgs: [],
@@ -82,6 +85,10 @@ export function parseArguments(args: readonly string[], processCwd: string): Cli
     }
     if (argument === "--yes" || argument === "-y") {
       result.yes = true;
+      continue;
+    }
+    if (argument === "--allow-execution") {
+      result.allowExecution = true;
       continue;
     }
     if (argument === "--no-color") {
@@ -120,6 +127,31 @@ export function parseArguments(args: readonly string[], processCwd: string): Cli
     }
     if (argument === "--group") {
       result.group = valueAfter(args, index, argument);
+      index += 1;
+      continue;
+    }
+    if (argument.startsWith("--source=")) {
+      const source = argument.slice("--source=".length);
+      if (!COMMAND_SOURCES.includes(source as CommandSourceKind)) {
+        throw new RunpaletteError(
+          "ARGUMENT_INVALID",
+          `Unsupported command source: ${source}`,
+          `Use one of: ${COMMAND_SOURCES.join(", ")}.`,
+        );
+      }
+      result.source = source as CommandSourceKind;
+      continue;
+    }
+    if (argument === "--source") {
+      const source = valueAfter(args, index, argument);
+      if (!COMMAND_SOURCES.includes(source as CommandSourceKind)) {
+        throw new RunpaletteError(
+          "ARGUMENT_INVALID",
+          `Unsupported command source: ${source}`,
+          `Use one of: ${COMMAND_SOURCES.join(", ")}.`,
+        );
+      }
+      result.source = source as CommandSourceKind;
       index += 1;
       continue;
     }
@@ -180,7 +212,7 @@ export function parseArguments(args: readonly string[], processCwd: string): Cli
     if (argument.startsWith("-")) {
       throw new RunpaletteError("ARGUMENT_INVALID", `Unknown option: ${argument}`);
     }
-    if (!commandSeen && (argument === "list" || argument === "run")) {
+    if (!commandSeen && (argument === "list" || argument === "run" || argument === "mcp")) {
       result.command = argument;
       commandSeen = true;
       continue;
@@ -197,6 +229,29 @@ export function parseArguments(args: readonly string[], processCwd: string): Cli
       "ARGUMENT_INVALID",
       "Missing script name for `runpalette run`.",
       "Use `runpalette list` to see available scripts.",
+    );
+  }
+  if (result.allowExecution && result.command !== "mcp") {
+    throw new RunpaletteError(
+      "ARGUMENT_INVALID",
+      "--allow-execution is only valid with `runpalette mcp`.",
+    );
+  }
+  if (
+    result.command === "mcp" &&
+    (result.workspace !== undefined || result.group !== undefined || result.source !== undefined)
+  ) {
+    throw new RunpaletteError(
+      "ARGUMENT_INVALID",
+      "Workspace, group, and source filters are MCP tool inputs, not server options.",
+      "Start `runpalette mcp`, then pass filters to list_commands or selectors to plan_command and run_command.",
+    );
+  }
+  if (result.command === "mcp" && (result.json || result.dryRun || result.yes)) {
+    throw new RunpaletteError(
+      "ARGUMENT_INVALID",
+      "--json, --dry-run, and --yes cannot be used with the MCP stdio server.",
+      "Use the MCP tools for structured plans and explicit execution confirmation.",
     );
   }
 

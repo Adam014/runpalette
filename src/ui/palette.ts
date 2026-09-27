@@ -98,6 +98,11 @@ export function renderPalette(
   const selected = commands[selectedIndex];
   const lines: string[] = [];
   const separator = capabilities.unicode ? " · " : " | ";
+  const sourceLabel =
+    [
+      ...(catalog.packageManager === undefined ? [] : [catalog.packageManager.name]),
+      ...catalog.sources.filter((source) => source !== "package"),
+    ].join("+") || "no sources";
   const truncateForTerminal = (value: string, maximum: number) =>
     truncate(value, maximum, capabilities.unicode);
 
@@ -110,7 +115,7 @@ export function renderPalette(
   );
   lines.push(
     frameLine(
-      `${catalog.project.name}${separator}${catalog.packageManager.name}${separator}${String(catalog.commands.length)} commands`,
+      `${catalog.project.name}${separator}${sourceLabel}${separator}${String(catalog.commands.length)} commands`,
       width,
       capabilities,
     ),
@@ -181,9 +186,10 @@ export function renderPalette(
       const pointer = active ? style.accent(capabilities.unicode ? "◆" : ">", capabilities) : " ";
       const workspace =
         catalog.project.workspaceCount > 0 ? `${separator}${row.command.workspace.name}` : "";
+      const source = catalog.sources.length > 1 ? `${separator}${row.command.source.kind}` : "";
       const confirmation = row.command.safety.confirmationRequired ? "  !" : "";
       const content = truncateForTerminal(
-        `${row.command.label}${workspace}${confirmation}`,
+        `${row.command.label}${source}${workspace}${confirmation}`,
         width - 7,
       );
       const rendered = active
@@ -195,7 +201,9 @@ export function renderPalette(
 
   const selectedScript = selected === undefined ? "No command selected" : selected.script;
   const delegated =
-    selected === undefined ? "" : `${catalog.packageManager.name} run ${selected.name}`;
+    selected === undefined
+      ? ""
+      : [selected.execution.executable, ...selected.execution.args].join(" ");
   lines.push("");
   lines.push(` ${style.dim("RUN", capabilities)}   ${truncateForTerminal(delegated, width - 8)}`);
   if (!compact) {
@@ -218,7 +226,7 @@ export function renderPalette(
       ` ${style.warning("!", capabilities)} ${truncateForTerminal("Confirmation required before execution", width - 4)}`,
     );
   }
-  const warning = catalog.packageManager.warnings[0];
+  const warning = catalog.packageManager?.warnings[0] ?? catalog.diagnostics[0]?.message;
   if (warning !== undefined) {
     lines.push(` ${style.warning("!", capabilities)} ${truncateForTerminal(warning, width - 4)}`);
   }

@@ -32,11 +32,37 @@ export interface ProjectWorkspace {
 
 export interface ProjectContext {
   root: string;
-  manifestPath: string;
   name: string;
-  manifest: ProjectManifest;
-  packageManager: PackageManagerResolution;
+  manifestPath?: string;
+  manifest?: ProjectManifest;
+  packageManager?: PackageManagerResolution;
   workspaces: ProjectWorkspace[];
+}
+
+export const COMMAND_SOURCES = ["package", "just", "task", "make", "cargo", "gradle"] as const;
+export type CommandSourceKind = (typeof COMMAND_SOURCES)[number];
+
+export interface DiscoveredCommand {
+  name: string;
+  label?: string;
+  description?: string;
+  script: string;
+  source: {
+    kind: CommandSourceKind;
+    path: string;
+  };
+  execution: {
+    executable: string;
+    args: string[];
+    forwardedArgsSeparator?: string;
+  };
+}
+
+export interface SourceDiagnostic {
+  source: CommandSourceKind;
+  level: "warning" | "error";
+  message: string;
+  hint?: string;
 }
 
 export const COMMAND_GROUPS = [
@@ -74,8 +100,13 @@ export interface CatalogCommand {
   safety: CommandSafety;
   workspace: CommandWorkspace;
   source: {
-    kind: "package.json";
+    kind: CommandSourceKind;
     path: string;
+  };
+  execution: {
+    executable: string;
+    args: string[];
+    forwardedArgsSeparator?: string;
   };
 }
 
@@ -90,10 +121,12 @@ export interface CommandCatalog {
   project: {
     name: string;
     root: string;
-    manifestPath: string;
+    manifestPath?: string;
     workspaceCount: number;
   };
-  packageManager: PackageManagerResolution;
+  packageManager?: PackageManagerResolution;
+  sources: CommandSourceKind[];
+  diagnostics: SourceDiagnostic[];
   groups: Array<{
     id: string;
     label: string;
@@ -114,7 +147,8 @@ export interface ExecutionPlan {
   };
   workspace: CommandWorkspace;
   safety: CommandSafety;
-  packageManager: PackageManagerName;
+  source: CatalogCommand["source"];
+  packageManager?: PackageManagerName;
   executable: string;
   args: string[];
   cwd: string;

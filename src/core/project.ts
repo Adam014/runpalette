@@ -19,17 +19,46 @@ async function startDirectory(path: string): Promise<string> {
   }
 }
 
-async function findManifest(start: string): Promise<string> {
+const PROJECT_MARKERS = [
+  "package.json",
+  "justfile",
+  "Justfile",
+  ".justfile",
+  "Taskfile.yml",
+  "Taskfile.yaml",
+  "taskfile.yml",
+  "taskfile.yaml",
+  "Taskfile.dist.yml",
+  "Taskfile.dist.yaml",
+  "GNUmakefile",
+  "Makefile",
+  "makefile",
+  "Cargo.toml",
+  "settings.gradle",
+  "settings.gradle.kts",
+  "build.gradle",
+  "build.gradle.kts",
+] as const;
+
+async function isFile(path: string): Promise<boolean> {
+  try {
+    return (await stat(path)).isFile();
+  } catch {
+    return false;
+  }
+}
+
+async function findProjectRoot(start: string): Promise<string> {
   let current = await startDirectory(start);
   const filesystemRoot = parse(current).root;
 
   while (true) {
-    const candidate = join(current, "package.json");
-    try {
-      const details = await stat(candidate);
-      if (details.isFile()) return candidate;
-    } catch {
-      // Continue toward the filesystem root.
+    if (
+      (await Promise.all(PROJECT_MARKERS.map((marker) => isFile(join(current, marker))))).some(
+        Boolean,
+      )
+    ) {
+      return current;
     }
 
     if (current === filesystemRoot) break;
@@ -38,8 +67,23 @@ async function findManifest(start: string): Promise<string> {
 
   throw new RunpaletteError(
     "PROJECT_NOT_FOUND",
+    `No supported project command source found from ${resolve(start)} upward.`,
+    "Run Runpalette inside a project with package.json, Justfile, Taskfile, Makefile, Cargo.toml, or Gradle files, or pass --cwd PATH.",
+  );
+}
+
+async function findManifest(start: string): Promise<string> {
+  let current = await startDirectory(start);
+  const filesystemRoot = parse(current).root;
+  while (true) {
+    const candidate = join(current, "package.json");
+    if (await isFile(candidate)) return candidate;
+    if (current === filesystemRoot) break;
+    current = dirname(current);
+  }
+  throw new RunpaletteError(
+    "PROJECT_NOT_FOUND",
     `No package.json found from ${resolve(start)} upward.`,
-    "Run Runpalette inside a JavaScript project or pass --cwd PATH.",
   );
 }
 
@@ -119,7 +163,24 @@ export async function discoverProject(options: {
   cwd: string;
   packageManager?: string;
 }): Promise<ProjectContext> {
-  const manifestPath = await findProjectManifest(options.cwd);
+  const nearestRoot = await findProjectRoot(options.cwd);
+  const nearestManifest = join(nearestRoot, "package.json");
+  if (!(await isFile(nearestManifest))) {
+    if (options.packageManager !== undefined) {
+      throw new RunpaletteError(
+        "PACKAGE_MANAGER_INVALID",
+        "--package-manager can only be used when the discovered project has package.json.",
+        "Remove --package-manager or choose a JavaScript project root.",
+      );
+    }
+    return {
+      root: nearestRoot,
+      name: basename(nearestRoot),
+      workspaces: [],
+    };
+  }
+
+  const manifestPath = await findProjectManifest(nearestRoot);
   let text: string;
   try {
     text = await readFile(manifestPath, "utf8");

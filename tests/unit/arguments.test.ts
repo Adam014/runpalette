@@ -17,6 +17,7 @@ describe("parseArguments", () => {
       nonInteractive: false,
       dryRun: false,
       yes: false,
+      allowExecution: false,
       color: "auto",
       unicode: "auto",
       scriptName: "test:unit",
@@ -65,6 +66,15 @@ describe("parseArguments", () => {
     expect(parsed.yes).toBe(true);
   });
 
+  test("parses source filters and the opt-in MCP execution mode", () => {
+    const parsed = parseArguments(["mcp", "--allow-execution"], "/p");
+    expect(parsed.command).toBe("mcp");
+    expect(parsed.allowExecution).toBe(true);
+    expect(() => parseArguments(["list", "--allow-execution"], "/p")).toThrow("only valid");
+    expect(() => parseArguments(["mcp", "--source", "just"], "/p")).toThrow("MCP tool inputs");
+    expect(() => parseArguments(["mcp", "--json"], "/p")).toThrow("cannot be used");
+  });
+
   test("supports every documented shorthand and inline value", () => {
     const parsed = parseArguments(
       [
@@ -106,6 +116,7 @@ describe("parseArguments", () => {
       ["--color=sometimes"],
       ["--unicode=wide"],
       ["--package-manager=other"],
+      ["--source=unknown"],
       ["--"],
       ["list", "extra"],
     ]) {
