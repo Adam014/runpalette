@@ -162,11 +162,21 @@ runpalette --version --json
 ```bash
 runpalette list --json
 runpalette run test --dry-run --json -- --watch
+runpalette run test --json --timeout 2m --max-output 2MiB
 ```
 
-Actual command execution currently uses human stream mode. Combine `--json`
-with `--dry-run` when an agent or CI job needs an execution plan without side
-effects.
+Use `--dry-run --json` for a side-effect-free execution plan. Without
+`--dry-run`, JSON mode executes the resolved catalog command without a shell
+and returns the plan plus a bounded execution result. It captures a combined
+1 MiB by default; `--max-output` accepts `B`, `KB`, `KiB`, `MB`, or `MiB` up to
+16 MiB. There is no hidden execution timeout. Add `--timeout` explicitly with
+`ms`, `s`, `m`, or `h` when the caller needs one.
+
+The structured result preserves timestamps, duration, child exit status,
+signal, stdout and stderr, observed byte counts, timeout, cancellation, and
+per-stream truncation. Runpalette returns the child's exit code, `124` for a
+timeout, and the conventional signal exit code when interrupted. Protected
+commands still require `--yes`; JSON mode never opens a prompt.
 
 For a native agent interface, `runpalette mcp` starts an MCP stdio server with
 read-only catalog and planning tools. See [MCP and agents](./mcp.md).
@@ -195,6 +205,8 @@ runpalette --color=always --unicode=always
 --package-manager NAME     Use npm, pnpm, yarn, or bun explicitly
 --allow-execution          Add run_command to the MCP server
 --dry-run                  Print the resolved execution plan without running
+--timeout DURATION         Bound captured JSON execution (1ms to 24h)
+--max-output SIZE          Bound captured JSON output (default 1MiB, max 16MiB)
 --yes, -y                  Approve a configured confirmation non-interactively
 --json                     Emit one versioned JSON result; implies non-interactive
 --non-interactive          Disable terminal prompts and palette rendering

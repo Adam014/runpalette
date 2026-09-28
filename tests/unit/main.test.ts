@@ -104,7 +104,7 @@ describe("main", () => {
     expect(payload.data.cwd).toBe(payload.data.workspace.root);
   });
 
-  test("returns focused human and JSON failures", async () => {
+  test("returns focused human failures and captured JSON execution", async () => {
     const root = await fixture();
     const human = await capture(["run", "missing", "--cwd", root, "--non-interactive"]);
     const jsonExecution = await capture(["run", "dev", "--cwd", root, "--json"]);
@@ -112,7 +112,15 @@ describe("main", () => {
 
     expect(human.code).toBe(2);
     expect(human.stderr).toContain("Closest commands");
-    expect(JSON.parse(jsonExecution.stdout).error.code).toBe("ARGUMENT_INVALID");
+    expect(jsonExecution.code).toBe(0);
+    expect(JSON.parse(jsonExecution.stdout)).toMatchObject({
+      ok: true,
+      command: "run",
+      data: {
+        plan: { script: { name: "dev" } },
+        execution: { exitCode: 0, timedOut: false, aborted: false },
+      },
+    });
     expect(JSON.parse(invalid.stdout).error.code).toBe("ARGUMENT_INVALID");
   });
 

@@ -5,6 +5,7 @@ import { createExecutionPlan, planForOutput } from "../core/plan.js";
 import { catalogWarnings, loadCatalog } from "../core/service.js";
 import { packageVersion } from "../core/version.js";
 import { runMcpServer } from "../mcp/server.js";
+import { executeCaptured } from "../process/capture.js";
 import { executePlan } from "../process/run.js";
 import { confirmExecution } from "../ui/confirm.js";
 import { openPalette } from "../ui/palette.js";
@@ -16,6 +17,10 @@ import { renderHelp } from "./help.js";
 
 function success(command: string, data: unknown, warnings: readonly string[] = []): string {
   return `${JSON.stringify({ schemaVersion: 1, ok: true, command, data, warnings })}\n`;
+}
+
+function executionResult(data: unknown, ok: boolean, warnings: readonly string[] = []): string {
+  return `${JSON.stringify({ schemaVersion: 1, ok, command: "run", data, warnings })}\n`;
 }
 
 function failure(error: unknown): { text: string; code: number } {
@@ -136,14 +141,6 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       );
       return 0;
     }
-    if (parsed.json) {
-      throw new RunpaletteError(
-        "ARGUMENT_INVALID",
-        "JSON execution requires --dry-run in this pre-release build.",
-        "Use --dry-run for a machine-readable plan or run without --json.",
-      );
-    }
-
     if (plan.safety.confirmationRequired && !parsed.yes) {
       if (!capabilities.interactive) {
         throw new RunpaletteError(
@@ -155,6 +152,41 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       if (!(await confirmExecution(plan, {}, capabilities.unicode))) {
         process.stderr.write("Cancelled.\n");
         return 0;
+      }
+    }
+
+    if (parsed.json) {
+      const controller = new AbortController();
+      let interruptedExitCode: number | undefined;
+      const interrupt = (): void => {
+        interruptedExitCode = 130;
+        controller.abort();
+      };
+      const terminate = (): void => {
+        interruptedExitCode = 143;
+        controller.abort();
+      };
+      process.once("SIGINT", interrupt);
+      process.once("SIGTERM", terminate);
+      try {
+        const execution = await executeCaptured(plan, {
+          maxOutputBytes: parsed.maxOutputBytes ?? 1_048_576,
+          ...(parsed.timeoutMs === undefined ? {} : { timeoutMs: parsed.timeoutMs }),
+          signal: controller.signal,
+        });
+        const ok = execution.exitCode === 0 && !execution.timedOut && !execution.aborted;
+        process.stdout.write(
+          executionResult(
+            { plan: planForOutput(plan, process.cwd()), execution },
+            ok,
+            catalogWarnings(catalog),
+          ),
+        );
+        if (execution.timedOut) return 124;
+        return interruptedExitCode ?? execution.exitCode;
+      } finally {
+        process.removeListener("SIGINT", interrupt);
+        process.removeListener("SIGTERM", terminate);
       }
     }
 

@@ -123,6 +123,79 @@ describe("Runpalette CLI", () => {
     expect(result.exitCode).toBe(7);
   });
 
+  test("captures actual execution as one bounded JSON result", async () => {
+    const root = await project({
+      report: "node -e \"process.stdout.write('ready'); process.stderr.write('warning')\"",
+    });
+    const result = run([
+      "run",
+      "report",
+      "--cwd",
+      root,
+      "--json",
+      "--timeout",
+      "10s",
+      "--max-output",
+      "1MiB",
+    ]);
+    const payload = JSON.parse(result.stdout) as {
+      ok: boolean;
+      data: {
+        plan: { script: { name: string } };
+        execution: {
+          exitCode: number;
+          stdout: string;
+          stderr: string;
+          maxOutputBytes: number;
+          timedOut: boolean;
+          aborted: boolean;
+        };
+      };
+    };
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(payload.ok).toBe(true);
+    expect(payload.data.plan.script.name).toBe("report");
+    expect(payload.data.execution).toMatchObject({
+      exitCode: 0,
+      maxOutputBytes: 1_048_576,
+      timedOut: false,
+      aborted: false,
+    });
+    expect(payload.data.execution.stdout).toContain("ready");
+    expect(payload.data.execution.stderr).toContain("warning");
+  });
+
+  test("preserves failed, timed-out, and truncated JSON execution states", async () => {
+    const root = await project({
+      fail: 'node -e "process.exit(7)"',
+      hang: 'node -e "setInterval(() => {}, 1000)"',
+      noisy: "node -e \"process.stdout.write('x'.repeat(1000))\"",
+    });
+    const failed = run(["run", "fail", "--cwd", root, "--json"]);
+    const timedOut = run(["run", "hang", "--cwd", root, "--json", "--timeout", "50ms"]);
+    const truncated = run(["run", "noisy", "--cwd", root, "--json", "--max-output", "100B"]);
+
+    expect(failed.exitCode).toBe(7);
+    expect(JSON.parse(failed.stdout)).toMatchObject({
+      ok: false,
+      data: { execution: { exitCode: 7, timedOut: false } },
+    });
+    expect(timedOut.exitCode).toBe(124);
+    expect(JSON.parse(timedOut.stdout)).toMatchObject({
+      ok: false,
+      data: { execution: { timedOut: true, aborted: false } },
+    });
+    expect(truncated.exitCode).toBe(0);
+    expect(JSON.parse(truncated.stdout)).toMatchObject({
+      ok: true,
+      data: {
+        execution: { truncated: true, capturedBytes: 100, maxOutputBytes: 100 },
+      },
+    });
+  });
+
   test("reports project errors as a single machine-readable failure", () => {
     const result = run(["list", "--json", "--cwd", "/path/that/does/not/exist"]);
     const payload = JSON.parse(result.stdout) as {

@@ -35,6 +35,16 @@ describe("parseArguments", () => {
     expect(parsed.yes).toBe(false);
   });
 
+  test("parses bounded captured execution values with human-readable units", () => {
+    const parsed = parseArguments(
+      ["run", "test", "--json", "--timeout=90s", "--max-output", "2MiB"],
+      "/p",
+    );
+
+    expect(parsed.timeoutMs).toBe(90_000);
+    expect(parsed.maxOutputBytes).toBe(2 * 1_048_576);
+  });
+
   test("reports invalid flags and missing values as product errors", () => {
     for (const args of [["--wat"], ["--cwd"], ["run"], ["--package-manager", "other"]]) {
       try {
@@ -119,6 +129,12 @@ describe("parseArguments", () => {
       ["--source=unknown"],
       ["--"],
       ["list", "extra"],
+      ["run", "test", "--timeout", "30s"],
+      ["run", "test", "--json", "--dry-run", "--max-output", "1MiB"],
+      ["run", "test", "--json", "--timeout", "30"],
+      ["run", "test", "--json", "--timeout", "25h"],
+      ["run", "test", "--json", "--max-output", "17MiB"],
+      ["list", "--json", "--max-output", "1MiB"],
     ]) {
       expect(() => parseArguments(args, "/p")).toThrow();
     }
