@@ -132,7 +132,8 @@ without executing the task.
 
 For CI and agents, actual JSON execution captures stdout and stderr into one
 bounded result while preserving exit status, timing, timeout, cancellation,
-and truncation metadata. Human execution keeps the task's native streams:
+and truncation metadata. Captured execution disables stdin; use human stream
+mode for an interactive task. Human execution keeps the task's native streams:
 
 ```bash
 runpalette run verify --non-interactive
