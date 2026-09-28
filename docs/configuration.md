@@ -96,6 +96,7 @@ Runpalette fails closed in CI and other non-interactive environments unless
 
 ```bash
 runpalette run release --dry-run --json
+runpalette run release --json --yes --timeout 10m
 runpalette run release --non-interactive --yes
 ```
 

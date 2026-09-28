@@ -76,7 +76,8 @@ The same package can be installed with `pnpm add -D runpalette`,
 - **Delegate faithfully** — let the original package manager or task tool own
   local binaries, lifecycle behavior, arguments, and exit codes.
 - **Serve agents and automation** — expose the same catalog and execution
-  plans as versioned JSON and read-only-by-default MCP tools.
+  plans as versioned JSON, run tasks with bounded structured output, or use
+  read-only-by-default MCP tools.
 
 ## Choose how you work
 
@@ -121,6 +122,7 @@ commands from README prose or execute an unknown shell string:
 ```bash
 runpalette list --json
 runpalette run test:e2e --dry-run --json
+runpalette run test:e2e --json --timeout 2m
 ```
 
 `--json` implies non-interactive behavior and writes one versioned result to
@@ -128,8 +130,9 @@ stdout. Diagnostics stay on stderr. A dry run returns the exact executable,
 argument array, working directory, selected command, and source choice
 without executing the task.
 
-Actual task execution deliberately keeps native streams and preserves the
-child's exit code:
+For CI and agents, actual JSON execution captures stdout and stderr into one
+bounded result while preserving exit status, timing, timeout, cancellation,
+and truncation metadata. Human execution keeps the task's native streams:
 
 ```bash
 runpalette run verify --non-interactive

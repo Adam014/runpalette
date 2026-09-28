@@ -18,6 +18,8 @@ export interface CliArguments {
   dryRun: boolean;
   yes: boolean;
   allowExecution: boolean;
+  timeoutMs?: number;
+  maxOutputBytes?: number;
   color: Preference;
   unicode: Preference;
   scriptName?: string;
@@ -39,6 +41,50 @@ function preference(value: string, flag: string): Preference {
     `Invalid value for ${flag}: ${value}`,
     "Use auto, always, or never.",
   );
+}
+
+function duration(value: string): number {
+  const match = /^(\d+)(ms|s|m|h)$/u.exec(value);
+  if (match === null) {
+    throw new RunpaletteError(
+      "ARGUMENT_INVALID",
+      `Invalid value for --timeout: ${value}`,
+      "Use an integer followed by ms, s, m, or h, for example 30s.",
+    );
+  }
+  const amount = Number(match[1]);
+  const multiplier = { ms: 1, s: 1_000, m: 60_000, h: 3_600_000 }[
+    match[2] as "ms" | "s" | "m" | "h"
+  ];
+  const milliseconds = amount * multiplier;
+  if (!Number.isSafeInteger(milliseconds) || milliseconds < 1 || milliseconds > 86_400_000) {
+    throw new RunpaletteError(
+      "ARGUMENT_INVALID",
+      `--timeout must be between 1ms and 24h: ${value}`,
+    );
+  }
+  return milliseconds;
+}
+
+function byteSize(value: string): number {
+  const match = /^(\d+)(b|kb|kib|mb|mib)$/iu.exec(value);
+  if (match === null) {
+    throw new RunpaletteError(
+      "ARGUMENT_INVALID",
+      `Invalid value for --max-output: ${value}`,
+      "Use an integer followed by B, KB, KiB, MB, or MiB, for example 1MiB.",
+    );
+  }
+  const unit = match[2]?.toLowerCase() as "b" | "kb" | "kib" | "mb" | "mib";
+  const multiplier = { b: 1, kb: 1_000, kib: 1_024, mb: 1_000_000, mib: 1_048_576 }[unit];
+  const bytes = Number(match[1]) * multiplier;
+  if (!Number.isSafeInteger(bytes) || bytes < 1 || bytes > 16 * 1_048_576) {
+    throw new RunpaletteError(
+      "ARGUMENT_INVALID",
+      `--max-output must be between 1B and 16MiB: ${value}`,
+    );
+  }
+  return bytes;
 }
 
 export function parseArguments(args: readonly string[], processCwd: string): CliArguments {
@@ -89,6 +135,24 @@ export function parseArguments(args: readonly string[], processCwd: string): Cli
     }
     if (argument === "--allow-execution") {
       result.allowExecution = true;
+      continue;
+    }
+    if (argument.startsWith("--timeout=")) {
+      result.timeoutMs = duration(argument.slice("--timeout=".length));
+      continue;
+    }
+    if (argument === "--timeout") {
+      result.timeoutMs = duration(valueAfter(args, index, argument));
+      index += 1;
+      continue;
+    }
+    if (argument.startsWith("--max-output=")) {
+      result.maxOutputBytes = byteSize(argument.slice("--max-output=".length));
+      continue;
+    }
+    if (argument === "--max-output") {
+      result.maxOutputBytes = byteSize(valueAfter(args, index, argument));
+      index += 1;
       continue;
     }
     if (argument === "--no-color") {
@@ -235,6 +299,15 @@ export function parseArguments(args: readonly string[], processCwd: string): Cli
     throw new RunpaletteError(
       "ARGUMENT_INVALID",
       "--allow-execution is only valid with `runpalette mcp`.",
+    );
+  }
+  if (
+    (result.timeoutMs !== undefined || result.maxOutputBytes !== undefined) &&
+    (result.command !== "run" || !result.json || result.dryRun)
+  ) {
+    throw new RunpaletteError(
+      "ARGUMENT_INVALID",
+      "--timeout and --max-output are only valid for captured `run NAME --json` execution.",
     );
   }
   if (

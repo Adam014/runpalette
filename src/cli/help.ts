@@ -17,6 +17,8 @@ Options:
   --json                         Emit one machine-readable JSON result
   --non-interactive              Never open a prompt
   --dry-run                      Show the exact execution plan
+  --timeout DURATION             Bound JSON execution, for example 30s or 5m
+  --max-output SIZE              Bound captured JSON output (default 1MiB)
   -y, --yes                      Approve a configured confirmation non-interactively
   --color=MODE                   auto, always, or never
   --unicode=MODE                 auto, always, or never
@@ -33,6 +35,7 @@ Examples:
   runpalette run verify --source make
   runpalette run test --workspace @acme/api
   runpalette run build --dry-run
+  runpalette run test --json --timeout 2m
   runpalette mcp
 `;
 

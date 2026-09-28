@@ -53,8 +53,10 @@ Execution is absent from the default server. Add it deliberately:
 
 This registers `run_command`. It executes one catalog-owned command without a
 shell, captures a combined maximum of 128 KiB, and accepts a timeout from 1 to
-120 seconds (30 seconds by default). The result includes exit status, signal,
-stdout, stderr, timeout state, and truncation state.
+120 seconds (30 seconds by default). Cancelling the MCP request terminates the
+owned process tree. The result includes timestamps, duration, exit status,
+signal, stdout, stderr, observed and captured byte counts, timeout or
+cancellation state, and per-stream truncation state.
 
 Commands protected by `runpalette.json` still fail closed. The agent must call
 `plan_command`, present or otherwise obtain the user's approval, and then send
@@ -73,5 +75,5 @@ shell text; the requested name must resolve to the discovered catalog.
    metadata.
 4. Ask for confirmation when the plan requires it.
 5. Call `run_command` only when execution was enabled intentionally.
-6. Treat a non-zero exit, timeout, or truncated output as explicit state rather
-   than assuming success.
+6. Treat a non-zero exit, timeout, cancellation, or truncated output as
+   explicit state rather than assuming success.

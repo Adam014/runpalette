@@ -159,7 +159,7 @@ export function createMcpServer(options: McpOptions): McpServer {
           openWorldHint: true,
         },
       },
-      async ({ name, args, workspace, source, confirmed, timeoutMs }) => {
+      async ({ name, args, workspace, source, confirmed, timeoutMs }, context) => {
         try {
           const { complete } = await catalogFor(options, {});
           const plan = createExecutionPlan(complete, name, args, workspace, source);
@@ -170,14 +170,18 @@ export function createMcpServer(options: McpOptions): McpServer {
               "Review it with plan_command, then call run_command with confirmed=true.",
             );
           }
-          const execution = await executeCaptured(plan, { timeoutMs, maxOutputBytes: 128 * 1024 });
+          const execution = await executeCaptured(plan, {
+            timeoutMs,
+            maxOutputBytes: 128 * 1024,
+            signal: context.mcpReq.signal,
+          });
           const payload = {
             schemaVersion: 1,
-            ok: execution.exitCode === 0 && !execution.timedOut,
+            ok: execution.exitCode === 0 && !execution.timedOut && !execution.aborted,
             plan: planForOutput(plan, complete.project.root),
             execution,
           };
-          return execution.exitCode === 0 && !execution.timedOut
+          return execution.exitCode === 0 && !execution.timedOut && !execution.aborted
             ? result(payload)
             : { ...result(payload), isError: true };
         } catch (error) {

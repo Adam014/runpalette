@@ -4,6 +4,13 @@ All notable changes to Runpalette will be documented in this file.
 
 ## Unreleased
 
+- Make captured command execution cancellation-safe, terminate owned process
+  trees when an MCP request is cancelled, and return timing plus precise output
+  budget metadata in the structured result.
+- Add actual `run NAME --json` execution for CI and agents with bounded stdout
+  and stderr, optional human-readable timeouts, preserved child exit status,
+  and the same confirmation policy as interactive execution.
+
 ## 0.3.0 - 2026-09-27
 
 - Discover one normalized command catalog across package scripts, Justfiles,
