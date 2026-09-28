@@ -83,11 +83,27 @@ describe("Runpalette MCP bridge", () => {
     expect(execution.isError).not.toBe(true);
     expect(execution.structuredContent).toMatchObject({
       ok: true,
-      execution: { exitCode: 0, timedOut: false, truncated: false },
+      execution: {
+        exitCode: 0,
+        timedOut: false,
+        aborted: false,
+        truncated: false,
+        maxOutputBytes: 128 * 1024,
+      },
     });
-    expect(
-      (execution.structuredContent as { execution: { stdout: string } }).execution.stdout,
-    ).toContain("agent-ready");
+    const captured = execution.structuredContent as {
+      execution: {
+        stdout: string;
+        stdoutBytes: number;
+        stderrBytes: number;
+        capturedBytes: number;
+      };
+    };
+    expect(captured.execution.stdoutBytes).toBeGreaterThanOrEqual(11);
+    expect(captured.execution.capturedBytes).toBe(
+      captured.execution.stdoutBytes + captured.execution.stderrBytes,
+    );
+    expect(captured.execution.stdout).toContain("agent-ready");
   });
 
   test("requires per-call confirmation for protected commands", async () => {

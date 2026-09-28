@@ -4,6 +4,10 @@ All notable changes to Runpalette will be documented in this file.
 
 ## Unreleased
 
+- Make captured command execution cancellation-safe, terminate owned process
+  trees when an MCP request is cancelled, and return timing plus precise output
+  budget metadata in the structured result.
+
 ## 0.3.0 - 2026-09-27
 
 - Discover one normalized command catalog across package scripts, Justfiles,
