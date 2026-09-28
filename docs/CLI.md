@@ -176,7 +176,9 @@ The structured result preserves timestamps, duration, child exit status,
 signal, stdout and stderr, observed byte counts, timeout, cancellation, and
 per-stream truncation. Runpalette returns the child's exit code, `124` for a
 timeout, and the conventional signal exit code when interrupted. Protected
-commands still require `--yes`; JSON mode never opens a prompt.
+commands still require `--yes`; JSON mode never opens a prompt and gives the
+child no stdin. Use ordinary non-JSON execution when a task needs interactive
+input.
 
 For a native agent interface, `runpalette mcp` starts an MCP stdio server with
 read-only catalog and planning tools. See [MCP and agents](./mcp.md).

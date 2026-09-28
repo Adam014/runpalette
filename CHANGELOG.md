@@ -4,6 +4,9 @@ All notable changes to Runpalette will be documented in this file.
 
 ## Unreleased
 
+- Clarify that bounded JSON and MCP execution intentionally disable child
+  stdin and that interactive tasks should use native stream mode.
+
 ## 0.4.0 - 2026-09-28
 
 - Make captured command execution cancellation-safe, terminate owned process
