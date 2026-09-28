@@ -4,6 +4,8 @@ All notable changes to Runpalette will be documented in this file.
 
 ## Unreleased
 
+## 0.4.0 - 2026-09-28
+
 - Make captured command execution cancellation-safe, terminate owned process
   trees when an MCP request is cancelled, and return timing plus precise output
   budget metadata in the structured result.
