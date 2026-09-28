@@ -184,7 +184,7 @@ preview the execution plan or delegate it unchanged
 | package scripts · Just · Task · Make · Cargo aliases · Gradle | npm · pnpm · Yarn · Bun | Node.js 22+ | interactive TTY · text · JSON · MCP |
 
 Package-manager choice is independent from the runtime executing Runpalette.
-The `0.3.x` release line targets Node.js 22 or newer. Additional runtimes are
+The `0.4.x` release line targets Node.js 22 or newer. Additional runtimes are
 promoted only after the packaged CLI passes their documented test contract.
 
 [See current compatibility evidence →](./COMPATIBILITY.md)

@@ -4,8 +4,12 @@ All notable changes to Runpalette will be documented in this file.
 
 ## Unreleased
 
+## 0.4.1 - 2026-09-28
+
 - Clarify that bounded JSON and MCP execution intentionally disable child
   stdin and that interactive tasks should use native stream mode.
+- Correct the npm README and compatibility guide to identify `0.4.x` as the
+  current supported release line.
 
 ## 0.4.0 - 2026-09-28
 

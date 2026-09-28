@@ -1,6 +1,6 @@
 # Compatibility
 
-Runpalette 0.3.x is the current public release line. Compatibility is
+Runpalette 0.4.x is the current public release line. Compatibility is
 claimed only after the packed CLI passes its documented contract on that
 environment.
 
