@@ -4,11 +4,12 @@
 
 | Version | Supported |
 | --- | --- |
-| `0.5.x` | Yes |
-| `< 0.5.0` | No |
+| Latest npm release | Yes |
+| Earlier releases | No |
 
-Security fixes target the latest published release. Because Runpalette is
-still below `1.0.0`, minor releases may include documented breaking changes.
+Security fixes target the latest published release. Starting with 1.0.0, the
+documented public surfaces follow the compatibility policy in
+[Stability and versioning](./docs/stability.md).
 
 ## Report a vulnerability privately
 

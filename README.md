@@ -237,6 +237,7 @@ MCP checks under each.
 | [Configuration](./docs/configuration.md) | Name, group, order, protect, hide, alias, or default commands. |
 | [Workspaces](./docs/workspaces.md) | Use Runpalette in npm, pnpm, Yarn, or Bun monorepos. |
 | [Compatibility](./COMPATIBILITY.md) | Check runtimes, package managers, terminals, and support status. |
+| [Stability](./docs/stability.md) | Understand the 1.x CLI, config, JSON, MCP, and exit-code contract. |
 | [Changelog](./CHANGELOG.md) | Review user-visible additions and behavior changes. |
 | [Contributing](./CONTRIBUTING.md) | Set up the repository and prepare a focused change. |
 | [Security](./SECURITY.md) | Report a vulnerability privately and review the support policy. |

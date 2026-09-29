@@ -51,6 +51,7 @@ async function packedArtifact() {
       "docs/completions.md",
       "docs/mcp.md",
       "docs/sources.md",
+      "docs/stability.md",
       "dist/cli.js",
       "dist/cli/completion.js",
       "dist/cli/main.js",
@@ -147,6 +148,9 @@ async function packedArtifact() {
       const names = tools.tools.map(({ name }) => name);
       if (names.join(",") !== "check_project,list_commands,plan_command") {
         throw new Error(`Installed MCP server exposed unexpected tools: ${names.join(", ")}`);
+      }
+      if (tools.tools.some(({ outputSchema }) => outputSchema === undefined)) {
+        throw new Error("Installed MCP server exposed a tool without an output schema");
       }
       const readiness = await client.callTool({ name: "check_project", arguments: {} });
       if (

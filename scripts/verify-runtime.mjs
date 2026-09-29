@@ -136,6 +136,9 @@ try {
     ) {
       throw new Error(`${runtime} exposed an invalid MCP tool surface`);
     }
+    if (tools.tools.some(({ outputSchema }) => outputSchema === undefined)) {
+      throw new Error(`${runtime} exposed an MCP tool without an output schema`);
+    }
     const readiness = await client.callTool({ name: "check_project", arguments: {} });
     if (
       readiness.isError === true ||
