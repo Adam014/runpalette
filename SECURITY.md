@@ -4,8 +4,8 @@
 
 | Version | Supported |
 | --- | --- |
-| `0.4.x` | Yes |
-| `< 0.4.0` | No |
+| `0.5.x` | Yes |
+| `< 0.5.0` | No |
 
 Security fixes target the latest published release. Because Runpalette is
 still below `1.0.0`, minor releases may include documented breaking changes.

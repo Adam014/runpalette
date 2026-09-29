@@ -189,15 +189,12 @@ preview the execution plan or delegate it unchanged
 
 | Command sources | Package managers | CLI runtime | Interfaces |
 | --- | --- | --- | --- |
-| package scripts · Just · Task · Make · Cargo aliases · Gradle | npm · pnpm · Yarn · Bun | Node.js 22+ · Bun 1.3 · Deno 2.9¹ | interactive TTY · text · JSON · MCP |
+| package scripts · Just · Task · Make · Cargo aliases · Gradle | npm · pnpm · Yarn · Bun | Node.js 22+ · Bun 1.3 · Deno 2.9 | interactive TTY · text · JSON · MCP |
 
 Package-manager choice is independent from the runtime executing Runpalette.
-The current `0.4.x` release targets Node.js 22 or newer. The upcoming `0.5.x`
-contract promotes Bun and Deno only after the packed CLI passes discovery,
-diagnostics, planning, execution, completion, and MCP checks under each.
-
-¹ Bun and Deno support is part of the unreleased `0.5.x` contract until that
-release is published.
+The `0.5.x` release contract covers Node.js, Bun, and Deno only after the
+packed CLI passes discovery, diagnostics, planning, execution, completion, and
+MCP checks under each.
 
 [See current compatibility evidence →](./COMPATIBILITY.md)
 

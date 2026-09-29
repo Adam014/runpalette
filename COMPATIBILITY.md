@@ -1,14 +1,13 @@
 # Compatibility
 
-Runpalette 0.4.x is the current public release line. Compatibility is claimed
+Runpalette 0.5.x is the current public release line. Compatibility is claimed
 only after the packed CLI passes its documented contract on that environment.
 
-The supported `0.4.x` CLI runtime is Node.js 22 or newer. The upcoming `0.5.x`
-contract adds Bun 1.3 and Deno 2.9 after the packed artifact passes discovery,
-doctor, planning, captured execution, completion, and MCP checks under each
-runtime. CI exercises the maintained Node.js release lines on Linux, macOS,
-and Windows and runs the complete packaged-runtime contract with pinned Bun
-and Deno versions on Linux.
+The supported `0.5.x` CLI runtimes are Node.js 22 or newer, Bun 1.3, and Deno
+2.9. The packed artifact passes discovery, doctor, planning, captured
+execution, completion, and MCP checks under each runtime. CI exercises the
+maintained Node.js release lines on Linux, macOS, and Windows and runs the
+complete packaged-runtime contract with pinned Bun and Deno versions on Linux.
 
 Runtime selection does not change project package-manager selection:
 
