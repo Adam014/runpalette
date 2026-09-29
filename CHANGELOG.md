@@ -4,6 +4,8 @@ All notable changes to Runpalette will be documented in this file.
 
 ## Unreleased
 
+## 0.7.0 - 2026-09-29
+
 - Add safe `config init` onboarding with an exact-version JSON Schema link,
   explicit overwrite protection, alternate-path support, and structured JSON
   output.
