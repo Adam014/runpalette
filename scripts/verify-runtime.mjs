@@ -131,8 +131,18 @@ try {
   try {
     await client.connect(transport);
     const tools = await client.listTools();
-    if (tools.tools.map(({ name }) => name).join(",") !== "list_commands,plan_command") {
+    if (
+      tools.tools.map(({ name }) => name).join(",") !== "check_project,list_commands,plan_command"
+    ) {
       throw new Error(`${runtime} exposed an invalid MCP tool surface`);
+    }
+    const readiness = await client.callTool({ name: "check_project", arguments: {} });
+    if (
+      readiness.isError === true ||
+      readiness.structuredContent?.ok !== true ||
+      readiness.structuredContent?.status === "error"
+    ) {
+      throw new Error(`${runtime} returned invalid project readiness`);
     }
     const result = await client.callTool({ name: "list_commands", arguments: {} });
     if (result.isError === true || result.structuredContent?.ok !== true) {

@@ -2,6 +2,8 @@ import { McpServer } from "@modelcontextprotocol/server";
 import { serveStdio } from "@modelcontextprotocol/server/stdio";
 import * as z from "zod/v4";
 import { catalogForOutput } from "../core/catalog.js";
+import { createConfigValidationReport } from "../core/config.js";
+import { createDoctorReport, doctorReportForOutput } from "../core/doctor.js";
 import { RunpaletteError } from "../core/errors.js";
 import type { PackageManagerName } from "../core/model.js";
 import { COMMAND_SOURCES } from "../core/model.js";
@@ -46,6 +48,70 @@ function errorResult(error: unknown) {
   };
 }
 
+const checkProjectOutput = z.object({
+  schemaVersion: z.literal(1),
+  ok: z.boolean(),
+  status: z.enum(["ready", "warning", "error"]),
+  doctor: z.object({
+    schemaVersion: z.literal(1),
+    status: z.enum(["ready", "warning", "error"]),
+    project: z.object({
+      name: z.string(),
+      root: z.string(),
+      manifestPath: z.string().optional(),
+      workspaceCount: z.number().int().nonnegative(),
+    }),
+    packageManager: z
+      .object({
+        name: z.enum(["npm", "pnpm", "yarn", "bun"]),
+        evidence: z.object({ source: z.string(), detail: z.string() }),
+        warnings: z.array(z.string()),
+      })
+      .optional(),
+    configuration: z.object({
+      mode: z.enum(["zero-config", "file"]),
+      path: z.string().optional(),
+    }),
+    summary: z.object({
+      commands: z.number().int().nonnegative(),
+      workspaces: z.number().int().nonnegative(),
+      hidden: z.number().int().nonnegative(),
+      protected: z.number().int().nonnegative(),
+      ambiguousNames: z.number().int().nonnegative(),
+    }),
+    sources: z.array(
+      z.object({ kind: z.enum(COMMAND_SOURCES), commands: z.number().int().nonnegative() }),
+    ),
+    checks: z.array(
+      z.object({
+        id: z.string(),
+        status: z.enum(["pass", "warning", "fail"]),
+        label: z.string(),
+        detail: z.string(),
+        hint: z.string().optional(),
+      }),
+    ),
+  }),
+  configuration: z
+    .object({
+      schemaVersion: z.literal(1),
+      status: z.enum(["valid", "warning"]),
+      path: z.string(),
+      configured: z.object({
+        commands: z.number().int().nonnegative(),
+        groups: z.number().int().nonnegative(),
+        default: z.boolean(),
+      }),
+      discovered: z.object({
+        runnableCommands: z.number().int().nonnegative(),
+        workspaces: z.number().int().nonnegative(),
+      }),
+      unmatchedSelectors: z.array(z.string()),
+    })
+    .nullable(),
+  warnings: z.array(z.string()),
+});
+
 async function catalogFor(
   options: McpOptions,
   input: {
@@ -70,7 +136,58 @@ export function createMcpServer(options: McpOptions): McpServer {
     {
       capabilities: { tools: {} },
       instructions:
-        "Discover and plan commands already owned by the current project. Execution is unavailable unless the user explicitly starts Runpalette with --allow-execution.",
+        "Check project readiness first, then discover and plan commands already owned by the project. Execution is unavailable unless the user explicitly starts Runpalette with --allow-execution.",
+    },
+  );
+
+  server.registerTool(
+    "check_project",
+    {
+      title: "Check project readiness",
+      description:
+        "Validate Runpalette project discovery, command sources, package-manager readiness, and optional configuration before planning work.",
+      inputSchema: z.object({}),
+      outputSchema: checkProjectOutput,
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+    },
+    async () => {
+      try {
+        const loaded = await catalogFor(options, {});
+        const doctor = doctorReportForOutput(
+          createDoctorReport(loaded.complete, loaded.config),
+          loaded.complete.project.root,
+        );
+        const configuration =
+          loaded.config.path === undefined
+            ? null
+            : createConfigValidationReport(
+                loaded.config,
+                loaded.complete,
+                loaded.complete.project.root,
+                loaded.configurationSelectors,
+              );
+        const status =
+          doctor.status === "error"
+            ? "error"
+            : doctor.status === "warning" || configuration?.status === "warning"
+              ? "warning"
+              : "ready";
+        return result({
+          schemaVersion: 1,
+          ok: status !== "error",
+          status,
+          doctor,
+          configuration,
+          warnings: catalogWarnings(loaded.complete),
+        });
+      } catch (error) {
+        return errorResult(error);
+      }
     },
   );
 

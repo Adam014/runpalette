@@ -4,6 +4,13 @@ All notable changes to Runpalette will be documented in this file.
 
 ## Unreleased
 
+- Add a read-only `check_project` MCP preflight tool that reuses Runpalette's
+  doctor and configuration-validation models, exposes a declared structured
+  output schema, and reports project readiness before an agent plans work.
+- Mark project preflight as read-only, non-destructive, idempotent, and
+  closed-world, and verify it through real MCP clients across packed Node, Bun,
+  and Deno runtime contracts.
+
 ## 0.7.0 - 2026-09-29
 
 - Add safe `config init` onboarding with an exact-version JSON Schema link,

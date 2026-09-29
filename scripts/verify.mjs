@@ -145,8 +145,18 @@ async function packedArtifact() {
       await client.connect(transport);
       const tools = await client.listTools();
       const names = tools.tools.map(({ name }) => name);
-      if (names.join(",") !== "list_commands,plan_command") {
+      if (names.join(",") !== "check_project,list_commands,plan_command") {
         throw new Error(`Installed MCP server exposed unexpected tools: ${names.join(", ")}`);
+      }
+      const readiness = await client.callTool({ name: "check_project", arguments: {} });
+      if (
+        readiness.isError === true ||
+        readiness.structuredContent?.ok !== true ||
+        readiness.structuredContent?.status === "error"
+      ) {
+        throw new Error(
+          `Installed MCP server did not return project readiness: ${JSON.stringify(readiness)}`,
+        );
       }
       const catalog = await client.callTool({ name: "list_commands", arguments: {} });
       if (catalog.isError === true || catalog.structuredContent?.ok !== true) {

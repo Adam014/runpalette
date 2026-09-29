@@ -236,7 +236,8 @@ child no stdin. Use ordinary non-JSON execution when a task needs interactive
 input.
 
 For a native agent interface, `runpalette mcp` starts an MCP stdio server with
-read-only catalog and planning tools. See [MCP and agents](./mcp.md).
+read-only project preflight, catalog, and planning tools. See
+[MCP and agents](./mcp.md).
 
 ## Terminal fallbacks
 
