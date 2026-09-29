@@ -207,7 +207,7 @@ preview the execution plan or delegate it unchanged
 | package scripts · Just · Task · Make · Cargo aliases · Gradle | npm · pnpm · Yarn · Bun | Node.js 22+ · Bun 1.3 · Deno 2.9 | interactive TTY · text · JSON · MCP |
 
 Package-manager choice is independent from the runtime executing Runpalette.
-The `0.8.x` release contract covers Node.js, Bun, and Deno only after the
+The `0.9.x` release contract covers Node.js, Bun, and Deno only after the
 packed CLI passes discovery, diagnostics, planning, execution, completion, and
 MCP checks under each.
 
