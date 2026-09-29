@@ -3,6 +3,7 @@ export const HELP = `Runpalette — project commands, made visible
 Usage:
   runpalette                     Open the interactive command palette
   runpalette list                List discovered commands
+  runpalette doctor              Validate project command readiness
   runpalette run NAME [-- ARGS]  Run one project command
   runpalette mcp                 Serve read-only MCP tools over stdio
 
@@ -31,6 +32,7 @@ Examples:
   runpalette
   runpalette list --json
   runpalette list --source make
+  runpalette doctor --json
   runpalette run test -- --watch
   runpalette run verify --source make
   runpalette run test --workspace @acme/api

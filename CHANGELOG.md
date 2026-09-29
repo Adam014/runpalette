@@ -4,6 +4,11 @@ All notable changes to Runpalette will be documented in this file.
 
 ## Unreleased
 
+- Add `runpalette doctor` with human and versioned JSON reports for project,
+  catalog, package-manager, configuration, and command-source readiness.
+- Return a blocking exit status only when the discovered command surface is
+  unusable while keeping optional-source warnings automation-friendly.
+
 ## 0.4.1 - 2026-09-28
 
 - Clarify that bounded JSON and MCP execution intentionally disable child

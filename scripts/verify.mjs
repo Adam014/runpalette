@@ -53,6 +53,7 @@ async function packedArtifact() {
       "dist/cli.js",
       "dist/cli/main.js",
       "dist/core/catalog.js",
+      "dist/core/doctor.js",
       "dist/mcp/server.js",
       "dist/ui/palette.js",
     ]) {
@@ -69,7 +70,7 @@ async function packedArtifact() {
     await mkdir(consumer);
     await writeFile(
       join(consumer, "package.json"),
-      `${JSON.stringify({ name: "consumer", private: true }, null, 2)}\n`,
+      `${JSON.stringify({ name: "consumer", private: true, scripts: { verify: "node --version" } }, null, 2)}\n`,
     );
     run(
       "npm",
@@ -87,6 +88,16 @@ async function packedArtifact() {
     );
     if (!help.includes("Open the interactive command palette")) {
       throw new Error("Installed CLI smoke test returned unexpected help output");
+    }
+    const doctor = JSON.parse(
+      run(
+        process.execPath,
+        [join(consumer, "node_modules/runpalette/dist/cli.js"), "doctor", "--json"],
+        { cwd: consumer },
+      ),
+    );
+    if (doctor.ok !== true || doctor.command !== "doctor" || doctor.data?.summary?.commands !== 1) {
+      throw new Error("Installed CLI doctor returned an unexpected readiness report");
     }
 
     const transport = new StdioClientTransport({

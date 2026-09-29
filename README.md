@@ -73,6 +73,9 @@ The same package can be installed with `pnpm add -D runpalette`,
   replacing the commands your project already owns.
 - **Show the exact action** — keep the owning source, delegated command, and
   underlying implementation visible while selecting.
+- **Diagnose readiness** — validate command discovery, package-manager
+  availability, configuration, and optional source tooling with one human- or
+  machine-readable check.
 - **Delegate faithfully** — let the original package manager or task tool own
   local binaries, lifecycle behavior, arguments, and exit codes.
 - **Serve agents and automation** — expose the same catalog and execution
@@ -96,6 +99,7 @@ runpalette list
 runpalette list --workspace @acme/web
 runpalette list --group quality
 runpalette list --source make
+runpalette doctor
 runpalette run test:unit
 runpalette run verify --source make
 runpalette run dev --workspace @acme/web
@@ -121,6 +125,7 @@ commands from README prose or execute an unknown shell string:
 
 ```bash
 runpalette list --json
+runpalette doctor --json
 runpalette run test:e2e --dry-run --json
 runpalette run test:e2e --json --timeout 2m
 ```
@@ -206,7 +211,7 @@ promoted only after the packaged CLI passes their documented test contract.
 
 | Guide | Start here when you want to… |
 | --- | --- |
-| [CLI guide](./docs/CLI.md) | Search, navigate, run scripts, pass arguments, or use JSON. |
+| [CLI guide](./docs/CLI.md) | Diagnose readiness, search, run commands, pass arguments, or use JSON. |
 | [Command sources](./docs/sources.md) | Understand discovery and native execution for each project tool. |
 | [MCP and agents](./docs/mcp.md) | Connect an agent, inspect plans, or enable bounded execution. |
 | [Configuration](./docs/configuration.md) | Name, group, order, protect, hide, alias, or default commands. |

@@ -3,7 +3,7 @@ import type { CommandSourceKind, PackageManagerName } from "../core/model.js";
 import { COMMAND_SOURCES, PACKAGE_MANAGERS } from "../core/model.js";
 
 export type Preference = "auto" | "always" | "never";
-export type CliCommand = "home" | "list" | "run" | "mcp" | "help" | "version";
+export type CliCommand = "home" | "list" | "run" | "doctor" | "mcp" | "help" | "version";
 
 export interface CliArguments {
   command: CliCommand;
@@ -276,7 +276,10 @@ export function parseArguments(args: readonly string[], processCwd: string): Cli
     if (argument.startsWith("-")) {
       throw new RunpaletteError("ARGUMENT_INVALID", `Unknown option: ${argument}`);
     }
-    if (!commandSeen && (argument === "list" || argument === "run" || argument === "mcp")) {
+    if (
+      !commandSeen &&
+      (argument === "list" || argument === "run" || argument === "doctor" || argument === "mcp")
+    ) {
       result.command = argument;
       commandSeen = true;
       continue;
@@ -325,6 +328,22 @@ export function parseArguments(args: readonly string[], processCwd: string): Cli
       "ARGUMENT_INVALID",
       "--json, --dry-run, and --yes cannot be used with the MCP stdio server.",
       "Use the MCP tools for structured plans and explicit execution confirmation.",
+    );
+  }
+  if (
+    result.command === "doctor" &&
+    (result.workspace !== undefined || result.group !== undefined || result.source !== undefined)
+  ) {
+    throw new RunpaletteError(
+      "ARGUMENT_INVALID",
+      "Workspace, group, and source filters cannot be used with `runpalette doctor`.",
+      "Doctor always validates the complete project.",
+    );
+  }
+  if (result.command === "doctor" && (result.dryRun || result.yes)) {
+    throw new RunpaletteError(
+      "ARGUMENT_INVALID",
+      "--dry-run and --yes cannot be used with `runpalette doctor`.",
     );
   }
 

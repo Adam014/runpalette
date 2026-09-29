@@ -1,5 +1,6 @@
 import process from "node:process";
 import { catalogForOutput } from "../core/catalog.js";
+import { createDoctorReport, doctorReportForOutput } from "../core/doctor.js";
 import { RunpaletteError } from "../core/errors.js";
 import { createExecutionPlan, planForOutput } from "../core/plan.js";
 import { catalogWarnings, loadCatalog } from "../core/service.js";
@@ -9,7 +10,7 @@ import { executeCaptured } from "../process/capture.js";
 import { executePlan } from "../process/run.js";
 import { confirmExecution } from "../ui/confirm.js";
 import { openPalette } from "../ui/palette.js";
-import { renderPlainCatalog, renderPlan } from "../ui/plain.js";
+import { renderDoctorReport, renderPlainCatalog, renderPlan } from "../ui/plain.js";
 import { style } from "../ui/style.js";
 import { terminalCapabilities } from "../ui/terminal.js";
 import { parseArguments } from "./arguments.js";
@@ -21,6 +22,10 @@ function success(command: string, data: unknown, warnings: readonly string[] = [
 
 function executionResult(data: unknown, ok: boolean, warnings: readonly string[] = []): string {
   return `${JSON.stringify({ schemaVersion: 1, ok, command: "run", data, warnings })}\n`;
+}
+
+function doctorResult(data: unknown, ok: boolean): string {
+  return `${JSON.stringify({ schemaVersion: 1, ok, command: "doctor", data, warnings: [] })}\n`;
 }
 
 function failure(error: unknown): { text: string; code: number } {
@@ -87,6 +92,15 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
     });
     const completeCatalog = loaded.complete;
     const catalog = parsed.command === "run" ? completeCatalog : loaded.filtered;
+    if (parsed.command === "doctor") {
+      const report = createDoctorReport(completeCatalog, loaded.config);
+      process.stdout.write(
+        parsed.json
+          ? doctorResult(doctorReportForOutput(report, process.cwd()), report.status !== "error")
+          : renderDoctorReport(report, capabilities),
+      );
+      return report.status === "error" ? 2 : 0;
+    }
     if (parsed.command === "list" || (parsed.command === "home" && !capabilities.interactive)) {
       if (parsed.json) {
         process.stdout.write(

@@ -35,6 +35,27 @@ Keyboard controls:
 Runpalette restores the normal terminal before the selected command starts, so
 the child receives the ordinary stdin, stdout, and stderr streams.
 
+## Check project readiness
+
+Use `doctor` when onboarding a repository, preparing CI, or diagnosing why a
+command source is incomplete:
+
+```bash
+runpalette doctor
+runpalette doctor --json
+```
+
+The report validates project discovery, the runnable command catalog, the
+selected package manager and its executable, optional configuration, and
+native source diagnostics. It also summarizes hidden, protected, and ambiguous
+commands without executing project code.
+
+Warnings such as a missing optional source tool keep exit code `0`, because
+other discovered commands remain usable. A blocker such as an empty catalog or
+missing selected package manager returns exit code `2`. In JSON mode the same
+state is available as `data.status`; top-level `ok` is `false` for a blocking
+report. Output paths are relative to the invoking directory.
+
 ## List and run directly
 
 ```bash

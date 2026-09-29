@@ -92,6 +92,19 @@ describe("Runpalette CLI", () => {
     expect(payload.data.commands.map(({ name }) => name)).toEqual(["dev", "test"]);
   });
 
+  test("returns a machine-readable project readiness report", async () => {
+    const root = await project({ dev: "vite", test: "vitest" });
+    const result = run(["doctor", "--json", "--cwd", root]);
+    const payload = JSON.parse(result.stdout) as {
+      data: { status: string; project: { root: string }; summary: { commands: number } };
+    };
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(payload.data).toMatchObject({ status: "ready", summary: { commands: 2 } });
+    expect(payload.data.project.root).not.toStartWith("/");
+  });
+
   test("returns the exact delegated invocation in dry-run JSON", async () => {
     const root = await project({ check: "node check.js" });
     const result = run(["run", "check", "--cwd", root, "--dry-run", "--json", "--", "a b"]);
