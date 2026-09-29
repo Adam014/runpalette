@@ -4,6 +4,8 @@ All notable changes to Runpalette will be documented in this file.
 
 ## Unreleased
 
+## 0.6.0 - 2026-09-29
+
 - Expand the human `run --dry-run` result into a focused command explanation
   with source, workspace, directory, safety policy, package manager, and exact
   delegated invocation while keeping the existing versioned JSON plan stable.
