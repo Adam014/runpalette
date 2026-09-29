@@ -146,6 +146,18 @@ complete behavior.
 Zero-config discovery remains the default. A checked-in `runpalette.json` can
 add presentation and safety policy without creating another task format:
 
+```bash
+runpalette config init
+runpalette config validate
+```
+
+`config init` creates the minimal file at the discovered project root and
+links its JSON Schema to the exact installed Runpalette version. It refuses to
+replace an existing file unless `--force` is explicit. `config validate`
+checks the complete syntax, aliases, defaults, and catalog semantics; it also
+reports configured command selectors that do not match the current project.
+Both commands support `--json` for setup automation.
+
 ```json
 {
   "$schema": "./node_modules/runpalette/schema/runpalette.schema.json",
@@ -249,6 +261,7 @@ runpalette --color=always --unicode=always
 --config PATH              Read an explicit Runpalette JSON configuration
 --package-manager NAME     Use npm, pnpm, yarn, or bun explicitly
 --allow-execution          Add run_command to the MCP server
+--force                    Replace an existing file during config init only
 --dry-run                  Print the resolved execution plan without running
 --timeout DURATION         Bound captured JSON execution (1ms to 24h)
 --max-output SIZE          Bound captured JSON output (default 1MiB, max 16MiB)

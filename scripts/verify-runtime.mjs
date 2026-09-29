@@ -65,6 +65,25 @@ try {
 
   const cli = join(consumer, "node_modules/runpalette/dist/cli.js");
   const invoke = (args) => run(runner.command, [...runner.prefix, cli, ...args], { cwd: consumer });
+  const invokeConfigInit = () =>
+    runtime === "deno"
+      ? run(
+          "deno",
+          [
+            "run",
+            "--allow-read",
+            "--allow-write",
+            "--allow-env",
+            "--allow-run",
+            "--allow-sys",
+            cli,
+            "config",
+            "init",
+            "--json",
+          ],
+          { cwd: consumer },
+        )
+      : invoke(["config", "init", "--json"]);
   if (!/^\d+\.\d+\.\d+\n$/u.test(invoke(["--version"]))) {
     throw new Error(`${runtime} returned an invalid version`);
   }
@@ -88,6 +107,14 @@ try {
   }
   if (!invoke(["completion", "bash"]).includes("_runpalette_completion")) {
     throw new Error(`${runtime} returned an invalid completion script`);
+  }
+  const initialized = JSON.parse(invokeConfigInit());
+  if (initialized.ok !== true || initialized.data?.action !== "init") {
+    throw new Error(`${runtime} did not initialize configuration`);
+  }
+  const validated = JSON.parse(invoke(["config", "validate", "--json"]));
+  if (validated.ok !== true || validated.data?.status !== "valid") {
+    throw new Error(`${runtime} did not validate configuration`);
   }
 
   const transport = new StdioClientTransport({

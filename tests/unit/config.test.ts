@@ -1,8 +1,15 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { rm, writeFile } from "node:fs/promises";
+import { readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { createCatalog } from "../../src/core/catalog.js";
-import { commandConfig, loadConfig, parseConfig } from "../../src/core/config.js";
+import { configurationSelectors, createCatalog } from "../../src/core/catalog.js";
+import {
+  commandConfig,
+  configTemplate,
+  createConfigValidationReport,
+  initializeConfig,
+  loadConfig,
+  parseConfig,
+} from "../../src/core/config.js";
 import type { ProjectContext } from "../../src/core/model.js";
 import { createProject } from "../helpers/project.js";
 
@@ -122,5 +129,57 @@ describe("Runpalette configuration", () => {
       label: "Test everything",
       description: "Test API",
     });
+  });
+
+  test("creates a minimal versioned config without overwriting by default", async () => {
+    const root = await createProject({ manifest: { name: "app" } });
+    roots.push(root);
+    const initialized = await initializeConfig({ root, version: "1.2.3" });
+
+    expect(initialized.overwritten).toBe(false);
+    expect(JSON.parse(await readFile(initialized.path, "utf8"))).toEqual({
+      $schema: "https://unpkg.com/runpalette@1.2.3/schema/runpalette.schema.json",
+      schemaVersion: 1,
+      groups: {},
+      commands: {},
+    });
+    expect(configTemplate("1.2.3")).toEndWith("\n");
+    await expect(initializeConfig({ root, version: "2.0.0" })).rejects.toMatchObject({
+      code: "CONFIG_EXISTS",
+    });
+    const overwritten = await initializeConfig({ root, version: "2.0.0", force: true });
+    expect(overwritten.overwritten).toBe(true);
+    expect(await readFile(initialized.path, "utf8")).toContain("runpalette@2.0.0");
+  });
+
+  test("reports stale selectors without rejecting an otherwise valid config", () => {
+    const config = parseConfig({
+      schemaVersion: 1,
+      commands: { dev: { label: "Develop" }, missing: { hidden: true } },
+    });
+    config.path = "/repo/runpalette.json";
+    const catalog = createCatalog(project(), config);
+    const report = createConfigValidationReport(
+      config,
+      catalog,
+      "/repo",
+      configurationSelectors(project(), []),
+    );
+
+    expect(report).toMatchObject({
+      status: "warning",
+      path: "runpalette.json",
+      configured: { commands: 2 },
+      discovered: { runnableCommands: 3 },
+      unmatchedSelectors: ["missing"],
+    });
+    expect(() =>
+      createConfigValidationReport(
+        { schemaVersion: 1, groups: {}, commands: {} },
+        createCatalog(project()),
+        "/repo",
+        configurationSelectors(project(), []),
+      ),
+    ).toThrow("No Runpalette configuration");
   });
 });

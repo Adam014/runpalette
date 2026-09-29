@@ -1,4 +1,4 @@
-import { createCatalog, filterCatalog } from "./catalog.js";
+import { configurationSelectors, createCatalog, filterCatalog } from "./catalog.js";
 import { loadConfig, type RunpaletteConfig } from "./config.js";
 import type { CommandCatalog, PackageManagerName } from "./model.js";
 import { discoverProject } from "./project.js";
@@ -17,6 +17,7 @@ export async function loadCatalog(request: CatalogRequest): Promise<{
   complete: CommandCatalog;
   filtered: CommandCatalog;
   config: RunpaletteConfig;
+  configurationSelectors: ReadonlySet<string>;
 }> {
   const project = await discoverProject({
     cwd: request.cwd,
@@ -33,7 +34,12 @@ export async function loadCatalog(request: CatalogRequest): Promise<{
     ...(request.workspace === undefined ? {} : { workspace: request.workspace }),
     ...(request.source === undefined ? {} : { source: request.source }),
   });
-  return { complete, filtered, config };
+  return {
+    complete,
+    filtered,
+    config,
+    configurationSelectors: configurationSelectors(project, external.commands),
+  };
 }
 
 export function catalogWarnings(catalog: CommandCatalog): string[] {

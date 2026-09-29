@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { rm } from "node:fs/promises";
+import { readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import process from "node:process";
 import { main } from "../../src/cli/main.js";
@@ -94,6 +94,42 @@ describe("main", () => {
         summary: { commands: 2 },
       },
     });
+  });
+
+  test("initializes and validates project configuration without silent overwrite", async () => {
+    const root = await fixture();
+    const initialized = await capture(["config", "init", "--cwd", root, "--no-color"]);
+    const duplicate = await capture(["config", "init", "--cwd", root]);
+    const validated = await capture(["config", "validate", "--cwd", root, "--json"]);
+
+    expect(initialized).toMatchObject({ code: 0, stderr: "" });
+    expect(initialized.stdout).toContain("Created");
+    expect(JSON.parse(await readFile(join(root, "runpalette.json"), "utf8"))).toMatchObject({
+      schemaVersion: 1,
+      groups: {},
+      commands: {},
+    });
+    expect(duplicate).toMatchObject({ code: 2 });
+    expect(duplicate.stderr).toContain("already exists");
+    expect(JSON.parse(validated.stdout)).toMatchObject({
+      ok: true,
+      command: "config",
+      data: {
+        action: "validate",
+        status: "valid",
+        configured: { commands: 0 },
+        discovered: { runnableCommands: 2 },
+      },
+    });
+
+    await writeFile(
+      join(root, "runpalette.json"),
+      JSON.stringify({ schemaVersion: 1, commands: { missing: { hidden: true } } }),
+    );
+    const warning = await capture(["config", "validate", "--cwd", root, "--no-color"]);
+    expect(warning).toMatchObject({ code: 0, stderr: "" });
+    expect(warning.stdout).toContain("Valid with warnings");
+    expect(warning.stdout).toContain("missing");
   });
 
   test("honors explicit color and Unicode preferences in plain output", async () => {

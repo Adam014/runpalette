@@ -18,6 +18,7 @@ describe("parseArguments", () => {
       dryRun: false,
       yes: false,
       allowExecution: false,
+      force: false,
       color: "auto",
       unicode: "auto",
       scriptName: "test:unit",
@@ -93,6 +94,26 @@ describe("parseArguments", () => {
     });
     expect(() => parseArguments(["doctor", "--workspace", "api"], "/p")).toThrow("cannot be used");
     expect(() => parseArguments(["doctor", "--dry-run"], "/p")).toThrow("cannot be used");
+  });
+
+  test("parses config onboarding and scopes force to initialization", () => {
+    expect(parseArguments(["config", "init", "--force", "--json"], "/p")).toMatchObject({
+      command: "config",
+      configAction: "init",
+      force: true,
+      json: true,
+    });
+    expect(parseArguments(["config", "validate", "--config", "team.json"], "/p")).toMatchObject({
+      command: "config",
+      configAction: "validate",
+      config: "team.json",
+    });
+    expect(() => parseArguments(["config"], "/p")).toThrow("Missing action");
+    expect(() => parseArguments(["config", "edit"], "/p")).toThrow("Unsupported config action");
+    expect(() => parseArguments(["config", "validate", "--force"], "/p")).toThrow("only valid");
+    expect(() => parseArguments(["config", "init", "--group", "quality"], "/p")).toThrow(
+      "cannot be used",
+    );
   });
 
   test("parses completion generation and protects its stdout contract", () => {

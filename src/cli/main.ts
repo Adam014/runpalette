@@ -1,8 +1,11 @@
+import { relative } from "node:path";
 import process from "node:process";
 import { catalogForOutput } from "../core/catalog.js";
+import { createConfigValidationReport, initializeConfig } from "../core/config.js";
 import { createDoctorReport, doctorReportForOutput } from "../core/doctor.js";
 import { RunpaletteError } from "../core/errors.js";
 import { createExecutionPlan, planForOutput } from "../core/plan.js";
+import { discoverProject } from "../core/project.js";
 import { catalogWarnings, loadCatalog } from "../core/service.js";
 import { packageVersion } from "../core/version.js";
 import { runMcpServer } from "../mcp/server.js";
@@ -11,6 +14,8 @@ import { executePlan } from "../process/run.js";
 import { confirmExecution } from "../ui/confirm.js";
 import { openPalette } from "../ui/palette.js";
 import {
+  renderConfigCreated,
+  renderConfigValidation,
   renderDoctorReport,
   renderPlainCatalog,
   renderPlan,
@@ -93,6 +98,35 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       });
       return 0;
     }
+    if (parsed.command === "config" && parsed.configAction === "init") {
+      const project = await discoverProject({
+        cwd: parsed.cwd,
+        ...(parsed.packageManager === undefined ? {} : { packageManager: parsed.packageManager }),
+      });
+      const initialized = await initializeConfig({
+        root: project.root,
+        version: await packageVersion(),
+        ...(parsed.config === undefined ? {} : { path: parsed.config }),
+        force: parsed.force,
+      });
+      const outputPath = relative(process.cwd(), initialized.path) || ".";
+      process.stdout.write(
+        parsed.json
+          ? success("config", {
+              action: "init",
+              path: outputPath,
+              project: { name: project.name, root: relative(process.cwd(), project.root) || "." },
+              overwritten: initialized.overwritten,
+            })
+          : renderConfigCreated(
+              outputPath,
+              project.name,
+              capabilities,
+              parsed.config !== undefined,
+            ),
+      );
+      return 0;
+    }
 
     const loaded = await loadCatalog({
       cwd: parsed.cwd,
@@ -104,6 +138,20 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
     });
     const completeCatalog = loaded.complete;
     const catalog = parsed.command === "run" ? completeCatalog : loaded.filtered;
+    if (parsed.command === "config" && parsed.configAction === "validate") {
+      const report = createConfigValidationReport(
+        loaded.config,
+        completeCatalog,
+        process.cwd(),
+        loaded.configurationSelectors,
+      );
+      process.stdout.write(
+        parsed.json
+          ? success("config", { action: "validate", ...report })
+          : renderConfigValidation(report, capabilities),
+      );
+      return 0;
+    }
     if (parsed.command === "__complete") {
       const candidates = completionCandidates(completeCatalog);
       if (candidates.length > 0) process.stdout.write(`${candidates.join("\n")}\n`);

@@ -27,6 +27,13 @@ needed by owning tools, launch those tools, and manage owned child processes.
 Runpalette does not require network permission after Deno has resolved the npm
 package.
 
+Creating a configuration is the only Runpalette workflow that writes to the
+project. Under Deno, grant that permission only for the initialization call:
+
+```bash
+deno run --allow-read --allow-write --allow-env --allow-run --allow-sys npm:runpalette config init
+```
+
 Project scripts are delegated to npm, pnpm, Yarn, or Bun independently of the
 runtime executing Runpalette. CI installs the packed release into a clean
 workspace consumer through each package manager, discovers a package command,

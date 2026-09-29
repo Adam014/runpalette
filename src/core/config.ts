@@ -1,6 +1,7 @@
-import { readFile, stat } from "node:fs/promises";
-import { isAbsolute, join, resolve } from "node:path";
+import { readFile, stat, writeFile } from "node:fs/promises";
+import { isAbsolute, join, relative, resolve } from "node:path";
 import { RunpaletteError } from "./errors.js";
+import type { CommandCatalog } from "./model.js";
 
 export interface GroupConfig {
   label?: string;
@@ -30,6 +31,15 @@ const EMPTY_CONFIG: RunpaletteConfig = {
   groups: {},
   commands: {},
 };
+
+export interface ConfigValidationReport {
+  schemaVersion: 1;
+  status: "valid" | "warning";
+  path: string;
+  configured: { commands: number; groups: number; default: boolean };
+  discovered: { runnableCommands: number; workspaces: number };
+  unmatchedSelectors: string[];
+}
 
 function invalid(path: string, message: string): never {
   throw new RunpaletteError(
@@ -161,16 +171,99 @@ async function isFile(path: string): Promise<boolean> {
   }
 }
 
+export function resolveConfigPath(root: string, path?: string): string {
+  if (path === undefined) return join(root, "runpalette.json");
+  return isAbsolute(path) ? path : resolve(process.cwd(), path);
+}
+
+export function configTemplate(version: string): string {
+  return `${JSON.stringify(
+    {
+      $schema: `https://unpkg.com/runpalette@${version}/schema/runpalette.schema.json`,
+      schemaVersion: 1,
+      groups: {},
+      commands: {},
+    },
+    null,
+    2,
+  )}\n`;
+}
+
+export async function initializeConfig(options: {
+  root: string;
+  version: string;
+  path?: string;
+  force?: boolean;
+}): Promise<{ path: string; overwritten: boolean }> {
+  const path = resolveConfigPath(options.root, options.path);
+  const existed = await isFile(path);
+  try {
+    await writeFile(path, configTemplate(options.version), {
+      encoding: "utf8",
+      flag: options.force === true ? "w" : "wx",
+    });
+  } catch (error) {
+    if (
+      options.force !== true &&
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      error.code === "EEXIST"
+    ) {
+      throw new RunpaletteError(
+        "CONFIG_EXISTS",
+        `Configuration file already exists: ${path}`,
+        "Validate it with `runpalette config validate`, or replace it explicitly with `runpalette config init --force`.",
+      );
+    }
+    const detail = error instanceof Error ? error.message : "Unknown write error";
+    throw new RunpaletteError(
+      "CONFIG_WRITE_FAILED",
+      `Cannot write ${path}: ${detail}`,
+      "Check the parent directory and file permissions, then try again.",
+    );
+  }
+  return { path, overwritten: options.force === true && existed };
+}
+
+export function createConfigValidationReport(
+  config: RunpaletteConfig,
+  catalog: CommandCatalog,
+  invocationCwd: string,
+  availableSelectors: ReadonlySet<string>,
+): ConfigValidationReport {
+  if (config.path === undefined) {
+    throw new RunpaletteError(
+      "CONFIG_READ_FAILED",
+      "No Runpalette configuration file was found.",
+      "Create one with `runpalette config init`.",
+    );
+  }
+  const unmatchedSelectors = Object.keys(config.commands).filter(
+    (selector) => !availableSelectors.has(selector),
+  );
+  return {
+    schemaVersion: 1,
+    status: unmatchedSelectors.length === 0 ? "valid" : "warning",
+    path: relative(invocationCwd, config.path) || ".",
+    configured: {
+      commands: Object.keys(config.commands).length,
+      groups: Object.keys(config.groups).length,
+      default: config.default !== undefined,
+    },
+    discovered: {
+      runnableCommands: catalog.commands.length,
+      workspaces: catalog.project.workspaceCount,
+    },
+    unmatchedSelectors,
+  };
+}
+
 export async function loadConfig(options: {
   root: string;
   path?: string;
 }): Promise<RunpaletteConfig> {
-  const path =
-    options.path === undefined
-      ? join(options.root, "runpalette.json")
-      : isAbsolute(options.path)
-        ? options.path
-        : resolve(process.cwd(), options.path);
+  const path = resolveConfigPath(options.root, options.path);
   if (!(await isFile(path))) {
     if (options.path !== undefined) {
       throw new RunpaletteError(

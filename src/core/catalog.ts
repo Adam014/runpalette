@@ -109,6 +109,35 @@ function isSelfAlias(name: string, script: string): boolean {
   return /(^|\s|\/)(?:runpalette)(?:\s|$)/u.test(script);
 }
 
+export function configurationSelectors(
+  project: ProjectContext,
+  discovered: readonly DiscoveredCommand[],
+): ReadonlySet<string> {
+  const selectors = new Set<string>();
+  const packages =
+    project.manifest === undefined || project.manifestPath === undefined
+      ? []
+      : [rootWorkspace(project), ...project.workspaces];
+  for (const workspace of packages) {
+    const scripts = workspace.manifest.scripts ?? {};
+    const allNames = new Set(Object.keys(scripts));
+    for (const [name, script] of Object.entries(scripts)) {
+      if (isLifecycleScript(name, allNames) || isSelfAlias(name, script)) continue;
+      selectors.add(name);
+      selectors.add(`${workspace.name}#${name}`);
+      selectors.add(`${workspace.relativePath}#${name}`);
+      if (workspace.relativePath === ".") selectors.add(`root#${name}`);
+    }
+  }
+  for (const command of discovered) {
+    selectors.add(command.name);
+    selectors.add(`${project.name}#${command.name}`);
+    selectors.add(`.#${command.name}`);
+    selectors.add(`root#${command.name}`);
+  }
+  return selectors;
+}
+
 function title(value: string): string {
   return value
     .split(/[._-]+/u)
