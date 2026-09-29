@@ -32,6 +32,7 @@ async function fakeSourceTools(root: string): Promise<string> {
       "const tool = process.argv[2];",
       "if (tool === 'just') console.log(JSON.stringify({recipes:{dev:{doc:'Start',private:false}}}));",
       "else if (tool === 'task') console.log(JSON.stringify({tasks:[{task:'test',desc:'Test'}]}));",
+      "else if (process.argv.includes('--no-daemon')) process.exit(9);",
       "else console.log('Build tasks\\n-----------\\nassemble - Assemble the project');",
     ].join("\n"),
   );
@@ -125,7 +126,7 @@ describe("project command source parsers", () => {
     expect(commands[2]?.execution.executable).toBe("/repo/gradlew");
   });
 
-  test("aggregates every supported project source through its bounded discovery adapter", async () => {
+  test("aggregates every source while preserving the project's Gradle daemon policy", async () => {
     const root = await createProject({
       manifest: { name: "mixed-project", scripts: {} },
       files: {

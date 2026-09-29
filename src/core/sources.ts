@@ -387,7 +387,7 @@ export async function discoverExternalCommands(project: ProjectContext): Promise
       source: "gradle",
       path: gradleFile,
       executable,
-      args: ["--no-daemon", "--no-scan", "--console=plain", "--quiet", "tasks", "--all"],
+      args: ["--no-scan", "--console=plain", "--quiet", "tasks", "--all"],
       root: project.root,
       parse: parseGradleTasks,
     });
