@@ -37,7 +37,7 @@ Then add only the metadata the team needs:
 
 ```json
 {
-  "$schema": "https://unpkg.com/runpalette@0.7.0/schema/runpalette.schema.json",
+  "$schema": "https://unpkg.com/runpalette@0.8.0/schema/runpalette.schema.json",
   "schemaVersion": 1,
   "default": "serve",
   "groups": {
