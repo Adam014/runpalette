@@ -1,9 +1,19 @@
 import { RunpaletteError } from "../core/errors.js";
 import type { CommandSourceKind, PackageManagerName } from "../core/model.js";
 import { COMMAND_SOURCES, PACKAGE_MANAGERS } from "../core/model.js";
+import { COMPLETION_SHELLS, type CompletionShell } from "./completion.js";
 
 export type Preference = "auto" | "always" | "never";
-export type CliCommand = "home" | "list" | "run" | "mcp" | "help" | "version";
+export type CliCommand =
+  | "home"
+  | "list"
+  | "run"
+  | "doctor"
+  | "mcp"
+  | "completion"
+  | "__complete"
+  | "help"
+  | "version";
 
 export interface CliArguments {
   command: CliCommand;
@@ -23,6 +33,7 @@ export interface CliArguments {
   color: Preference;
   unicode: Preference;
   scriptName?: string;
+  completionShell?: CompletionShell;
   scriptArgs: string[];
 }
 
@@ -276,13 +287,32 @@ export function parseArguments(args: readonly string[], processCwd: string): Cli
     if (argument.startsWith("-")) {
       throw new RunpaletteError("ARGUMENT_INVALID", `Unknown option: ${argument}`);
     }
-    if (!commandSeen && (argument === "list" || argument === "run" || argument === "mcp")) {
+    if (
+      !commandSeen &&
+      (argument === "list" ||
+        argument === "run" ||
+        argument === "doctor" ||
+        argument === "mcp" ||
+        argument === "completion" ||
+        argument === "__complete")
+    ) {
       result.command = argument;
       commandSeen = true;
       continue;
     }
     if (result.command === "run" && result.scriptName === undefined) {
       result.scriptName = argument;
+      continue;
+    }
+    if (result.command === "completion" && result.completionShell === undefined) {
+      if (!COMPLETION_SHELLS.includes(argument as CompletionShell)) {
+        throw new RunpaletteError(
+          "ARGUMENT_INVALID",
+          `Unsupported completion shell: ${argument}`,
+          `Use one of: ${COMPLETION_SHELLS.join(", ")}.`,
+        );
+      }
+      result.completionShell = argument as CompletionShell;
       continue;
     }
     throw new RunpaletteError("ARGUMENT_INVALID", `Unexpected argument: ${argument}`);
@@ -293,6 +323,13 @@ export function parseArguments(args: readonly string[], processCwd: string): Cli
       "ARGUMENT_INVALID",
       "Missing script name for `runpalette run`.",
       "Use `runpalette list` to see available scripts.",
+    );
+  }
+  if (result.command === "completion" && result.completionShell === undefined) {
+    throw new RunpaletteError(
+      "ARGUMENT_INVALID",
+      "Missing shell for `runpalette completion`.",
+      `Use one of: ${COMPLETION_SHELLS.join(", ")}.`,
     );
   }
   if (result.allowExecution && result.command !== "mcp") {
@@ -326,6 +363,54 @@ export function parseArguments(args: readonly string[], processCwd: string): Cli
       "--json, --dry-run, and --yes cannot be used with the MCP stdio server.",
       "Use the MCP tools for structured plans and explicit execution confirmation.",
     );
+  }
+  if (
+    result.command === "doctor" &&
+    (result.workspace !== undefined || result.group !== undefined || result.source !== undefined)
+  ) {
+    throw new RunpaletteError(
+      "ARGUMENT_INVALID",
+      "Workspace, group, and source filters cannot be used with `runpalette doctor`.",
+      "Doctor always validates the complete project.",
+    );
+  }
+  if (result.command === "doctor" && (result.dryRun || result.yes)) {
+    throw new RunpaletteError(
+      "ARGUMENT_INVALID",
+      "--dry-run and --yes cannot be used with `runpalette doctor`.",
+    );
+  }
+  if (
+    result.command === "completion" &&
+    (result.json ||
+      result.nonInteractive ||
+      result.dryRun ||
+      result.yes ||
+      result.allowExecution ||
+      result.workspace !== undefined ||
+      result.group !== undefined ||
+      result.source !== undefined ||
+      result.config !== undefined ||
+      result.packageManager !== undefined ||
+      result.cwd !== processCwd)
+  ) {
+    throw new RunpaletteError(
+      "ARGUMENT_INVALID",
+      "Project, execution, and output options cannot be used with `runpalette completion`.",
+    );
+  }
+  if (
+    result.command === "__complete" &&
+    (result.json ||
+      result.nonInteractive ||
+      result.dryRun ||
+      result.yes ||
+      result.allowExecution ||
+      result.workspace !== undefined ||
+      result.group !== undefined ||
+      result.source !== undefined)
+  ) {
+    throw new RunpaletteError("ARGUMENT_INVALID", "Unsupported internal completion option.");
   }
 
   return result;

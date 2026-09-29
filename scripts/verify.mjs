@@ -48,11 +48,14 @@ async function packedArtifact() {
       "README.md",
       "LICENSE",
       "docs/CLI.md",
+      "docs/completions.md",
       "docs/mcp.md",
       "docs/sources.md",
       "dist/cli.js",
+      "dist/cli/completion.js",
       "dist/cli/main.js",
       "dist/core/catalog.js",
+      "dist/core/doctor.js",
       "dist/mcp/server.js",
       "dist/ui/palette.js",
     ]) {
@@ -69,7 +72,7 @@ async function packedArtifact() {
     await mkdir(consumer);
     await writeFile(
       join(consumer, "package.json"),
-      `${JSON.stringify({ name: "consumer", private: true }, null, 2)}\n`,
+      `${JSON.stringify({ name: "consumer", private: true, scripts: { verify: "node --version" } }, null, 2)}\n`,
     );
     run(
       "npm",
@@ -87,6 +90,24 @@ async function packedArtifact() {
     );
     if (!help.includes("Open the interactive command palette")) {
       throw new Error("Installed CLI smoke test returned unexpected help output");
+    }
+    const completion = run(
+      process.execPath,
+      [join(consumer, "node_modules/runpalette/dist/cli.js"), "completion", "bash"],
+      { cwd: consumer },
+    );
+    if (!completion.includes("complete -F _runpalette_completion runpalette")) {
+      throw new Error("Installed CLI returned an unexpected Bash completion script");
+    }
+    const doctor = JSON.parse(
+      run(
+        process.execPath,
+        [join(consumer, "node_modules/runpalette/dist/cli.js"), "doctor", "--json"],
+        { cwd: consumer },
+      ),
+    );
+    if (doctor.ok !== true || doctor.command !== "doctor" || doctor.data?.summary?.commands !== 1) {
+      throw new Error("Installed CLI doctor returned an unexpected readiness report");
     }
 
     const transport = new StdioClientTransport({

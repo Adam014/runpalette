@@ -31,6 +31,8 @@ bun run typecheck
 bun run lint
 bun run test
 bun run test:coverage
+bun run verify:runtime:bun
+bun run verify:runtime:deno
 ```
 
 Coverage produces `coverage/lcov.info` and enforces at least 90% line and

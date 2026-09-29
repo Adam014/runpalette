@@ -4,6 +4,16 @@ All notable changes to Runpalette will be documented in this file.
 
 ## Unreleased
 
+- Add `runpalette doctor` with human and versioned JSON reports for project,
+  catalog, package-manager, configuration, and command-source readiness.
+- Return a blocking exit status only when the discovered command surface is
+  unusable while keeping optional-source warnings automation-friendly.
+- Generate Bash, Zsh, Fish, and PowerShell completion scripts with dynamic
+  candidates from the current project's command names and aliases.
+- Add complete packed-artifact runtime contracts for Bun and Deno covering
+  discovery, doctor, planning, captured execution, completion, and MCP, and
+  enforce them independently in CI.
+
 ## 0.4.1 - 2026-09-28
 
 - Clarify that bounded JSON and MCP execution intentionally disable child

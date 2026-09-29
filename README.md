@@ -68,11 +68,16 @@ The same package can be installed with `pnpm add -D runpalette`,
   pnpm, Yarn, and Bun monorepos, then run from the selected package directory.
 - **Search immediately** — type any part of a command name or implementation;
   press Tab to focus a group, then use arrows or `Ctrl-N` / `Ctrl-P` to move.
+- **Complete in your shell** — generate Bash, Zsh, Fish, or PowerShell
+  completion with live project command and alias candidates.
 - **Describe your workflows** — add labels, descriptions, aliases, ordering,
   custom groups, defaults, hidden entries, and explicit confirmation without
   replacing the commands your project already owns.
 - **Show the exact action** — keep the owning source, delegated command, and
   underlying implementation visible while selecting.
+- **Diagnose readiness** — validate command discovery, package-manager
+  availability, configuration, and optional source tooling with one human- or
+  machine-readable check.
 - **Delegate faithfully** — let the original package manager or task tool own
   local binaries, lifecycle behavior, arguments, and exit codes.
 - **Serve agents and automation** — expose the same catalog and execution
@@ -96,6 +101,8 @@ runpalette list
 runpalette list --workspace @acme/web
 runpalette list --group quality
 runpalette list --source make
+runpalette doctor
+runpalette completion zsh
 runpalette run test:unit
 runpalette run verify --source make
 runpalette run dev --workspace @acme/web
@@ -121,6 +128,7 @@ commands from README prose or execute an unknown shell string:
 
 ```bash
 runpalette list --json
+runpalette doctor --json
 runpalette run test:e2e --dry-run --json
 runpalette run test:e2e --json --timeout 2m
 ```
@@ -181,11 +189,15 @@ preview the execution plan or delegate it unchanged
 
 | Command sources | Package managers | CLI runtime | Interfaces |
 | --- | --- | --- | --- |
-| package scripts · Just · Task · Make · Cargo aliases · Gradle | npm · pnpm · Yarn · Bun | Node.js 22+ | interactive TTY · text · JSON · MCP |
+| package scripts · Just · Task · Make · Cargo aliases · Gradle | npm · pnpm · Yarn · Bun | Node.js 22+ · Bun 1.3 · Deno 2.9¹ | interactive TTY · text · JSON · MCP |
 
 Package-manager choice is independent from the runtime executing Runpalette.
-The `0.4.x` release line targets Node.js 22 or newer. Additional runtimes are
-promoted only after the packaged CLI passes their documented test contract.
+The current `0.4.x` release targets Node.js 22 or newer. The upcoming `0.5.x`
+contract promotes Bun and Deno only after the packed CLI passes discovery,
+diagnostics, planning, execution, completion, and MCP checks under each.
+
+¹ Bun and Deno support is part of the unreleased `0.5.x` contract until that
+release is published.
 
 [See current compatibility evidence →](./COMPATIBILITY.md)
 
@@ -206,7 +218,8 @@ promoted only after the packaged CLI passes their documented test contract.
 
 | Guide | Start here when you want to… |
 | --- | --- |
-| [CLI guide](./docs/CLI.md) | Search, navigate, run scripts, pass arguments, or use JSON. |
+| [CLI guide](./docs/CLI.md) | Diagnose readiness, search, run commands, pass arguments, or use JSON. |
+| [Shell completion](./docs/completions.md) | Complete Runpalette options and current project commands in your shell. |
 | [Command sources](./docs/sources.md) | Understand discovery and native execution for each project tool. |
 | [MCP and agents](./docs/mcp.md) | Connect an agent, inspect plans, or enable bounded execution. |
 | [Configuration](./docs/configuration.md) | Name, group, order, protect, hide, alias, or default commands. |

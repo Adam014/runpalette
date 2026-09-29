@@ -77,6 +77,25 @@ describe("main", () => {
     expect(JSON.parse(json.stdout).data.commands).toHaveLength(2);
   });
 
+  test("diagnoses project readiness in human and JSON modes", async () => {
+    const root = await fixture();
+    const human = await capture(["doctor", "--cwd", root, "--no-color"]);
+    const json = await capture(["doctor", "--cwd", root, "--json"]);
+
+    expect(human).toMatchObject({ code: 0, stderr: "" });
+    expect(human.stdout).toContain("Runpalette doctor");
+    expect(human.stdout).toContain("2 runnable commands discovered");
+    expect(JSON.parse(json.stdout)).toMatchObject({
+      ok: true,
+      command: "doctor",
+      data: {
+        status: "ready",
+        configuration: { mode: "zero-config" },
+        summary: { commands: 2 },
+      },
+    });
+  });
+
   test("honors explicit color and Unicode preferences in plain output", async () => {
     const root = await fixture();
     const ascii = await capture(["list", "--cwd", root, "--no-color", "--no-unicode"]);
@@ -155,5 +174,24 @@ describe("main", () => {
     expect(empty.code).toBe(0);
     expect(empty.stdout).toContain("No runnable project commands found");
     expect(JSON.parse(missing.stdout).error.code).toBe("PROJECT_PATH_INVALID");
+  });
+
+  test("returns a blocking doctor exit code when no commands are available", async () => {
+    const root = await createProject({ manifest: { name: "empty", packageManager: "npm@11" } });
+    roots.push(root);
+
+    const result = await capture(["doctor", "--cwd", root, "--json"]);
+
+    expect(result.code).toBe(2);
+    expect(JSON.parse(result.stdout)).toMatchObject({
+      ok: false,
+      command: "doctor",
+      data: {
+        status: "error",
+        checks: expect.arrayContaining([
+          expect.objectContaining({ id: "commands", status: "fail" }),
+        ]),
+      },
+    });
   });
 });

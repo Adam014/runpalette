@@ -85,6 +85,26 @@ describe("parseArguments", () => {
     expect(() => parseArguments(["mcp", "--json"], "/p")).toThrow("cannot be used");
   });
 
+  test("parses doctor and rejects filters or execution-only options", () => {
+    expect(parseArguments(["doctor", "--json"], "/p")).toMatchObject({
+      command: "doctor",
+      json: true,
+      nonInteractive: true,
+    });
+    expect(() => parseArguments(["doctor", "--workspace", "api"], "/p")).toThrow("cannot be used");
+    expect(() => parseArguments(["doctor", "--dry-run"], "/p")).toThrow("cannot be used");
+  });
+
+  test("parses completion generation and protects its stdout contract", () => {
+    expect(parseArguments(["completion", "zsh"], "/p")).toMatchObject({
+      command: "completion",
+      completionShell: "zsh",
+    });
+    expect(() => parseArguments(["completion"], "/p")).toThrow("Missing shell");
+    expect(() => parseArguments(["completion", "nu"], "/p")).toThrow("Unsupported");
+    expect(() => parseArguments(["completion", "bash", "--json"], "/p")).toThrow("cannot be used");
+  });
+
   test("supports every documented shorthand and inline value", () => {
     const parsed = parseArguments(
       [

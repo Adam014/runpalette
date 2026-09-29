@@ -1,3 +1,4 @@
+import type { DoctorReport } from "../core/doctor.js";
 import type { CommandCatalog, ExecutionPlan } from "../core/model.js";
 import { sanitize, style } from "./style.js";
 import type { TerminalCapabilities } from "./terminal.js";
@@ -49,6 +50,52 @@ export function renderPlainCatalog(
       "Add commands to a supported project source.",
     );
   }
+  return `${lines.join("\n")}\n`;
+}
+
+export function renderDoctorReport(
+  report: DoctorReport,
+  capabilities: TerminalCapabilities,
+): string {
+  const symbols = capabilities.unicode
+    ? { pass: "✓", warning: "!", fail: "✕" }
+    : { pass: "OK", warning: "!", fail: "X" };
+  const statusStyle = {
+    pass: style.accent,
+    warning: style.warning,
+    fail: style.failure,
+  } as const;
+  const lines = [style.strong("Runpalette doctor", capabilities), ""];
+  for (const check of report.checks) {
+    const marker = statusStyle[check.status](symbols[check.status], capabilities);
+    lines.push(`${marker} ${style.strong(check.label, capabilities)}  ${sanitize(check.detail)}`);
+    if (check.hint !== undefined) {
+      lines.push(style.dim(`  ${sanitize(check.hint)}`, capabilities));
+    }
+  }
+  const summary =
+    report.status === "ready"
+      ? "Ready"
+      : report.status === "warning"
+        ? "Ready with warnings"
+        : "Not ready";
+  const renderSummary =
+    report.status === "ready"
+      ? style.accent
+      : report.status === "warning"
+        ? style.warning
+        : style.failure;
+  const details = [
+    `${String(report.summary.commands)} command${report.summary.commands === 1 ? "" : "s"}`,
+    `${String(report.sources.length)} source${report.sources.length === 1 ? "" : "s"}`,
+    ...(report.summary.workspaces === 0
+      ? []
+      : [
+          `${String(report.summary.workspaces)} workspace${report.summary.workspaces === 1 ? "" : "s"}`,
+        ]),
+    ...(report.summary.protected === 0 ? [] : [`${String(report.summary.protected)} protected`]),
+  ];
+  lines.push("", `${renderSummary(summary, capabilities)} · ${details.join(" · ")}`);
   return `${lines.join("\n")}\n`;
 }
 

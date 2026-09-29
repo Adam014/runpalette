@@ -1,9 +1,9 @@
-import { statSync } from "node:fs";
 import { readFile, stat } from "node:fs/promises";
-import { delimiter, join } from "node:path";
+import { join } from "node:path";
 import process from "node:process";
 import spawn from "cross-spawn";
 import { parse as parseToml } from "smol-toml";
+import { executableAvailable } from "../process/executable.js";
 import { terminateProcessTree } from "../process/terminate.js";
 import type {
   CommandSourceKind,
@@ -35,38 +35,6 @@ async function firstFile(root: string, names: readonly string[]): Promise<string
     if (await file(candidate)) return candidate;
   }
   return undefined;
-}
-
-function executableAvailable(executable: string): boolean {
-  if (executable.includes("/") || executable.includes("\\")) return true;
-  const extensions =
-    process.platform === "win32" ? (process.env.PATHEXT ?? ".EXE;.CMD;.BAT").split(";") : [""];
-  for (const directory of (process.env.PATH ?? "").split(delimiter)) {
-    if (directory === "") continue;
-    for (const extension of extensions) {
-      try {
-        if (requireStat(join(directory, `${executable}${extension.toLowerCase()}`))) return true;
-        if (
-          extension !== extension.toLowerCase() &&
-          requireStat(join(directory, `${executable}${extension}`))
-        )
-          return true;
-      } catch {
-        // Continue searching PATH.
-      }
-    }
-  }
-  return false;
-}
-
-function requireStat(path: string): boolean {
-  try {
-    // Bun and Node both expose this sync subset; keeping it here avoids an async
-    // process spawn solely to distinguish a missing optional source tool.
-    return statSync(path).isFile();
-  } catch {
-    return false;
-  }
 }
 
 export function captureCommand(
