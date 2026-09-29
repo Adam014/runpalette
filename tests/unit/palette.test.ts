@@ -13,6 +13,7 @@ function catalog(): CommandCatalog {
     group: "develop" as const,
     order: 0,
     safety: { confirmationRequired: false },
+    requirements: { environment: [], executables: [] },
     workspace: { name: "app", path: ".", root: "/workspace/app", isRoot: true },
     source: { kind: "package" as const, path: "/workspace/app/package.json" },
     execution: { executable: "pnpm", args: ["run", "dev"] },
@@ -26,6 +27,7 @@ function catalog(): CommandCatalog {
     group: "quality" as const,
     order: 1,
     safety: { confirmationRequired: false },
+    requirements: { environment: [], executables: [] },
     workspace: { name: "app", path: ".", root: "/workspace/app", isRoot: true },
     source: { kind: "package" as const, path: "/workspace/app/package.json" },
     execution: { executable: "pnpm", args: ["run", "test:unit"] },
@@ -175,6 +177,7 @@ describe("renderPalette", () => {
       isRoot: false,
     };
     command.safety = { confirmationRequired: true };
+    command.requirements = { environment: ["API_TOKEN"], executables: ["docker"] };
 
     const details = renderPalette(
       value,
@@ -190,6 +193,8 @@ describe("renderPalette", () => {
     expect(details).toContain("Start web");
     expect(details).toContain("Open the frontend");
     expect(details).toContain("Confirmation required");
+    expect(details).toContain("NEEDS");
+    expect(details).toContain("env API_TOKEN · bin docker");
     expect(details).toContain("Multiple lockfiles detected");
     expect(help).toContain("KEYBOARD");
     expect(help).toContain("Shift-Tab");

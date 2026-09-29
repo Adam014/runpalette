@@ -238,6 +238,10 @@ export function createCatalog(
           confirmationRequired: confirm === true || typeof confirm === "string",
           ...(typeof confirm === "string" ? { message: confirm } : {}),
         },
+        requirements: {
+          environment: [...(configured.requires?.environment ?? [])],
+          executables: [...(configured.requires?.executables ?? [])],
+        },
         workspace: {
           name: workspace.name,
           path: workspace.relativePath,
@@ -276,6 +280,10 @@ export function createCatalog(
       safety: {
         confirmationRequired: confirm === true || typeof confirm === "string",
         ...(typeof confirm === "string" ? { message: confirm } : {}),
+      },
+      requirements: {
+        environment: [...(configured.requires?.environment ?? [])],
+        executables: [...(configured.requires?.executables ?? [])],
       },
       workspace: { name: project.name, path: ".", root: project.root, isRoot: true },
       source: sourceCommand.source,

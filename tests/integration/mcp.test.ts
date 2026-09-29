@@ -204,6 +204,44 @@ describe("Runpalette MCP bridge", () => {
     ).toContain("released");
   });
 
+  test("plans missing requirements but refuses MCP execution before launch", async () => {
+    const root = await createProject({
+      manifest: {
+        name: "mcp-requirements",
+        packageManager: "npm@11",
+        scripts: { deploy: "node -e \"process.stdout.write('should-not-run')\"" },
+      },
+      files: {
+        "runpalette.json": JSON.stringify({
+          schemaVersion: 1,
+          commands: {
+            deploy: { requires: { environment: ["RUNPALETTE_TEST_MISSING_ENV"] } },
+          },
+        }),
+      },
+    });
+    projects.push(root);
+    const client = await connect(root, true);
+
+    const planned = await client.callTool({
+      name: "plan_command",
+      arguments: { name: "deploy" },
+    });
+    expect(planned.structuredContent).toMatchObject({
+      ok: true,
+      plan: {
+        readiness: { ready: false, missingEnvironment: ["RUNPALETTE_TEST_MISSING_ENV"] },
+      },
+    });
+
+    const refused = await client.callTool({
+      name: "run_command",
+      arguments: { name: "deploy" },
+    });
+    expect(refused.isError).toBe(true);
+    expect((refused.content[0] as { text: string }).text).toContain("COMMAND_REQUIREMENTS_UNMET");
+  });
+
   test("returns source filters and failed child results through the MCP contract", async () => {
     const root = await createProject({
       manifest: {

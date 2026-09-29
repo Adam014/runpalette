@@ -16,6 +16,10 @@ export interface CommandConfig {
   hidden?: boolean;
   aliases?: string[];
   confirm?: boolean | string;
+  requires?: {
+    environment?: string[];
+    executables?: string[];
+  };
 }
 
 export interface RunpaletteConfig {
@@ -91,7 +95,7 @@ function parseCommand(value: unknown, path: string): CommandConfig {
   const record = object(value, path);
   knownKeys(
     record,
-    ["label", "description", "group", "order", "hidden", "aliases", "confirm"],
+    ["label", "description", "group", "order", "hidden", "aliases", "confirm", "requires"],
     path,
   );
   const label = optionalString(record.label, `${path}.label`);
@@ -118,6 +122,38 @@ function parseCommand(value: unknown, path: string): CommandConfig {
   ) {
     invalid(`${path}.confirm`, "expected a boolean or non-empty string");
   }
+  let requires: CommandConfig["requires"];
+  if (record.requires !== undefined) {
+    const requirementRecord = object(record.requires, `${path}.requires`);
+    knownKeys(requirementRecord, ["environment", "executables"], `${path}.requires`);
+    const parseRequirementList = (key: "environment" | "executables"): string[] | undefined => {
+      const input = requirementRecord[key];
+      if (input === undefined) return undefined;
+      if (!Array.isArray(input)) invalid(`${path}.requires.${key}`, "expected an array");
+      const values = input.map((entry, index) => {
+        const parsed = optionalString(entry, `${path}.requires.${key}[${String(index)}]`);
+        if (parsed === undefined)
+          invalid(`${path}.requires.${key}[${String(index)}]`, "expected a string");
+        if (parsed.includes("\0"))
+          invalid(`${path}.requires.${key}[${String(index)}]`, "cannot contain a null byte");
+        if (key === "environment" && parsed.includes("="))
+          invalid(
+            `${path}.requires.${key}[${String(index)}]`,
+            "must be a variable name, not an assignment",
+          );
+        return parsed;
+      });
+      if (new Set(values).size !== values.length)
+        invalid(`${path}.requires.${key}`, "contains duplicates");
+      return values;
+    };
+    const environment = parseRequirementList("environment");
+    const executables = parseRequirementList("executables");
+    requires = {
+      ...(environment === undefined ? {} : { environment }),
+      ...(executables === undefined ? {} : { executables }),
+    };
+  }
   return {
     ...(label === undefined ? {} : { label }),
     ...(description === undefined ? {} : { description }),
@@ -130,6 +166,7 @@ function parseCommand(value: unknown, path: string): CommandConfig {
       : {
           confirm: typeof record.confirm === "string" ? record.confirm.trim() : record.confirm,
         }),
+    ...(requires === undefined ? {} : { requires }),
   };
 }
 
@@ -302,5 +339,9 @@ export function commandConfig(
     config.commands[`${workspaceName}#${scriptName}`] ??
     config.commands[`${workspacePath}#${scriptName}`] ??
     {};
-  return { ...general, ...specific };
+  const merged = { ...general, ...specific };
+  if (general.requires !== undefined || specific.requires !== undefined) {
+    merged.requires = { ...general.requires, ...specific.requires };
+  }
+  return merged;
 }

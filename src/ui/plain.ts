@@ -172,6 +172,19 @@ export function renderPlanDetails(plan: ExecutionPlan, capabilities: TerminalCap
     ["Workspace", `${sanitize(plan.workspace.name)}${separator}${sanitize(plan.workspace.path)}`],
     ["Directory", sanitize(plan.cwd)],
     ["Safety", safety],
+    [
+      "Requirements",
+      plan.readiness.ready
+        ? "ready"
+        : [
+            ...(plan.readiness.missingEnvironment.length === 0
+              ? []
+              : [`missing environment: ${plan.readiness.missingEnvironment.join(", ")}`]),
+            ...(plan.readiness.missingExecutables.length === 0
+              ? []
+              : [`missing executables: ${plan.readiness.missingExecutables.join(", ")}`]),
+          ].join(separator),
+    ],
     ...(plan.packageManager === undefined
       ? []
       : [["Manager", sanitize(plan.packageManager)] as const]),

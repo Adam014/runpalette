@@ -12,6 +12,7 @@ function catalog(packageManager: PackageManagerName): CommandCatalog {
     group: "quality" as const,
     order: 0,
     safety: { confirmationRequired: false },
+    requirements: { environment: [], executables: [] },
     workspace: { name: "repo", path: ".", root: "/repo", isRoot: true },
     source: { kind: "package" as const, path: "/repo/package.json" },
     execution: {
@@ -63,5 +64,24 @@ describe("createExecutionPlan", () => {
 
     expect(plan.script).toEqual({ name: "test", value: "vitest", requestedAs: "check" });
     expect(plan.args).toEqual(["run", "test"]);
+  });
+
+  test("reports declared command readiness without exposing environment values", () => {
+    const value = catalog("npm");
+    const command = value.commands[0];
+    if (command === undefined) throw new Error("Fixture invariant failed.");
+    command.requirements = {
+      environment: ["RUNPALETTE_TEST_MISSING_ENV"],
+      executables: [process.execPath, "runpalette-test-missing-executable"],
+    };
+
+    const plan = createExecutionPlan(value, "test", []);
+
+    expect(plan.requirements).toEqual(command.requirements);
+    expect(plan.readiness).toEqual({
+      ready: false,
+      missingEnvironment: ["RUNPALETTE_TEST_MISSING_ENV"],
+      missingExecutables: ["runpalette-test-missing-executable"],
+    });
   });
 });

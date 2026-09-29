@@ -73,6 +73,9 @@ The same package can be installed with `pnpm add -D runpalette`,
 - **Describe your workflows** — add labels, descriptions, aliases, ordering,
   custom groups, defaults, hidden entries, and explicit confirmation without
   replacing the commands your project already owns.
+- **Check command prerequisites** — declare required environment names and
+  external executables, inspect readiness before launch, and fail early instead
+  of discovering missing setup halfway through a workflow.
 - **Bootstrap configuration safely** — create a schema-linked team config and
   validate it against the commands the repository actually exposes.
 - **Show the exact action** — keep the owning source, delegated command, and
@@ -115,8 +118,8 @@ runpalette run build --dry-run
 ```
 
 The dry-run explains where the command came from, which workspace and directory
-it uses, whether confirmation is required, and the exact invocation—without
-executing project code.
+it uses, whether confirmation is required, whether declared prerequisites are
+available, and the exact invocation—without executing project code.
 
 The palette uses an alternate terminal screen and restores the normal terminal
 before the selected task starts. The child then receives ordinary stdin,
@@ -166,7 +169,9 @@ The MCP server offers `check_project`, `list_commands`, and `plan_command` by
 default, so an agent can verify readiness before selecting work. `run_command`
 exists only when the user explicitly starts the server with
 `--allow-execution`; configured confirmations still apply to every call and
-execution is time/output bounded.
+execution is time/output bounded. Plans expose declared command requirements;
+execution refuses a command whose required environment names or executables
+are unavailable.
 
 [Connect a coding agent with MCP →](./docs/mcp.md)
 

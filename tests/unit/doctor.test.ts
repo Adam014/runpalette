@@ -29,6 +29,7 @@ function catalog(overrides: Partial<CommandCatalog> = {}): CommandCatalog {
         group: "quality",
         order: 0,
         safety: { confirmationRequired: false },
+        requirements: { environment: [], executables: [] },
         workspace: { name: "fixture", path: ".", root: process.cwd(), isRoot: true },
         source: { kind: "package", path: `${process.cwd()}/package.json` },
         execution: { executable: "npm", args: ["run", "test"], forwardedArgsSeparator: "--" },
@@ -51,6 +52,7 @@ describe("createDoctorReport", () => {
       hidden: 0,
       protected: 0,
       ambiguousNames: 0,
+      unavailable: 0,
     });
     expect(report.sources).toEqual([{ kind: "package", commands: 1 }]);
     expect(doctorReportForOutput(report, process.cwd()).project.root).toBe(".");
@@ -102,5 +104,30 @@ describe("createDoctorReport", () => {
     expect(report.configuration.mode).toBe("file");
     expect(report.summary).toMatchObject({ commands: 2, protected: 1, ambiguousNames: 1 });
     expect(doctorReportForOutput(report, process.cwd()).configuration.path).toBe("runpalette.json");
+  });
+
+  test("warns when configured command requirements are unavailable", () => {
+    const first = catalog().commands[0];
+    if (first === undefined) throw new Error("Fixture invariant failed.");
+    const report = createDoctorReport(
+      catalog({
+        commands: [
+          {
+            ...first,
+            requirements: {
+              environment: ["RUNPALETTE_TEST_MISSING_ENV"],
+              executables: [],
+            },
+          },
+        ],
+      }),
+      { schemaVersion: 1, groups: {}, commands: {} },
+    );
+
+    expect(report.status).toBe("warning");
+    expect(report.summary.unavailable).toBe(1);
+    expect(report.checks).toContainEqual(
+      expect.objectContaining({ id: "command-requirements", status: "warning" }),
+    );
   });
 });

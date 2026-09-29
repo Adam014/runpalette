@@ -10,6 +10,8 @@ describe("executePlan", () => {
         script: { name: "test", value: "test", requestedAs: "test" },
         workspace: { name: "repo", path: ".", root: process.cwd(), isRoot: true },
         safety: { confirmationRequired: false },
+        requirements: { environment: [], executables: [] },
+        readiness: { ready: true, missingEnvironment: [], missingExecutables: [] },
         source: { kind: "package", path: "package.json" },
         packageManager: "npm",
         executable: "runpalette-manager-that-does-not-exist",

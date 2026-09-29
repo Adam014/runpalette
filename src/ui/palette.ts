@@ -220,6 +220,22 @@ export function renderPalette(
         ` ${style.dim("IN", capabilities)}    ${truncateForTerminal(selected.workspace.name, width - 8)}`,
       );
     }
+    if (
+      selected !== undefined &&
+      (selected.requirements.environment.length > 0 || selected.requirements.executables.length > 0)
+    ) {
+      const requirements = [
+        ...(selected.requirements.environment.length === 0
+          ? []
+          : [`env ${selected.requirements.environment.join(", ")}`]),
+        ...(selected.requirements.executables.length === 0
+          ? []
+          : [`bin ${selected.requirements.executables.join(", ")}`]),
+      ].join(separator);
+      lines.push(
+        ` ${style.dim("NEEDS", capabilities)} ${truncateForTerminal(requirements, width - 8)}`,
+      );
+    }
   }
   if (selected?.safety.confirmationRequired === true) {
     lines.push(

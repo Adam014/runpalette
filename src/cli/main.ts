@@ -6,6 +6,7 @@ import { createDoctorReport, doctorReportForOutput } from "../core/doctor.js";
 import { RunpaletteError } from "../core/errors.js";
 import { createExecutionPlan, planForOutput } from "../core/plan.js";
 import { discoverProject } from "../core/project.js";
+import { assertPlanReady } from "../core/requirements.js";
 import { catalogWarnings, loadCatalog } from "../core/service.js";
 import { packageVersion } from "../core/version.js";
 import { runMcpServer } from "../mcp/server.js";
@@ -220,6 +221,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       );
       return 0;
     }
+    assertPlanReady(plan);
     if (plan.safety.confirmationRequired && !parsed.yes) {
       if (!capabilities.interactive) {
         throw new RunpaletteError(
