@@ -10,7 +10,12 @@ import { executeCaptured } from "../process/capture.js";
 import { executePlan } from "../process/run.js";
 import { confirmExecution } from "../ui/confirm.js";
 import { openPalette } from "../ui/palette.js";
-import { renderDoctorReport, renderPlainCatalog, renderPlan } from "../ui/plain.js";
+import {
+  renderDoctorReport,
+  renderPlainCatalog,
+  renderPlan,
+  renderPlanDetails,
+} from "../ui/plain.js";
 import { style } from "../ui/style.js";
 import { terminalCapabilities } from "../ui/terminal.js";
 import { parseArguments } from "./arguments.js";
@@ -163,7 +168,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       process.stdout.write(
         parsed.json
           ? success("run", planForOutput(plan, process.cwd()), catalogWarnings(catalog))
-          : renderPlan(plan),
+          : renderPlanDetails(planForOutput(plan, process.cwd()), capabilities),
       );
       return 0;
     }

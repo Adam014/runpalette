@@ -96,6 +96,11 @@ runpalette run build --dry-run
 runpalette run build --dry-run --json
 ```
 
+The human dry-run explains the selected command's source, workspace, working
+directory, safety requirement, package manager, and exact delegated command.
+The JSON form exposes the same versioned plan as structured data for agents and
+CI.
+
 ## Project and package-manager selection
 
 Discovery begins at the current directory and walks upward to the nearest

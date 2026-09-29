@@ -4,6 +4,9 @@ All notable changes to Runpalette will be documented in this file.
 
 ## Unreleased
 
+- Expand the human `run --dry-run` result into a focused command explanation
+  with source, workspace, directory, safety policy, package manager, and exact
+  delegated invocation while keeping the existing versioned JSON plan stable.
 - Make repeated Gradle command discovery substantially faster by respecting
   Gradle's standard project daemon policy instead of forcing a disposable JVM
   for every catalog load.

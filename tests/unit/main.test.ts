@@ -113,7 +113,12 @@ describe("main", () => {
     const human = await capture(["run", "dev", "--cwd", root, "--dry-run"]);
     const json = await capture(["run", "dev", "--cwd", root, "--dry-run", "--json"]);
 
-    expect(human.stdout).toContain("npm run dev");
+    expect(human.stdout).toContain("Runpalette plan");
+    expect(human.stdout).toContain("Command    dev");
+    expect(human.stdout).toContain("Source     package");
+    expect(human.stdout).toContain("Workspace  main-fixture");
+    expect(human.stdout).toContain("Safety     no confirmation required");
+    expect(human.stdout).toContain("$ npm run dev");
     const payload = JSON.parse(json.stdout);
     expect(payload).toMatchObject({
       ok: true,

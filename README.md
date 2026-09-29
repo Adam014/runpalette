@@ -110,6 +110,10 @@ runpalette run test:unit -- --watch
 runpalette run build --dry-run
 ```
 
+The dry-run explains where the command came from, which workspace and directory
+it uses, whether confirmation is required, and the exact invocation—without
+executing project code.
+
 The palette uses an alternate terminal screen and restores the normal terminal
 before the selected task starts. The child then receives ordinary stdin,
 stdout, and stderr instead of running inside a simulated console.
