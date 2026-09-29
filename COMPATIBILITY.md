@@ -1,13 +1,32 @@
 # Compatibility
 
-Runpalette 0.4.x is the current public release line. Compatibility is
-claimed only after the packed CLI passes its documented contract on that
-environment.
+Runpalette 0.4.x is the current public release line. Compatibility is claimed
+only after the packed CLI passes its documented contract on that environment.
 
-The supported CLI runtime is Node.js 22 or newer. CI exercises the maintained
-Node.js release lines on Linux, macOS, and Windows. The verification pipeline
-also smoke-tests the built artifact with Bun, but Bun and Deno remain preview
-runtime targets until they pass the same complete packaged-runtime contract.
+The supported `0.4.x` CLI runtime is Node.js 22 or newer. The upcoming `0.5.x`
+contract adds Bun 1.3 and Deno 2.9 after the packed artifact passes discovery,
+doctor, planning, captured execution, completion, and MCP checks under each
+runtime. CI exercises the maintained Node.js release lines on Linux, macOS,
+and Windows and runs the complete packaged-runtime contract with pinned Bun
+and Deno versions on Linux.
+
+Runtime selection does not change project package-manager selection:
+
+```bash
+# Node.js
+npx runpalette
+
+# Bun
+bunx --bun runpalette
+
+# Deno
+deno run --allow-read --allow-env --allow-run --allow-sys npm:runpalette
+```
+
+Deno permissions allow Runpalette to inspect the project, read environment
+needed by owning tools, launch those tools, and manage owned child processes.
+Runpalette does not require network permission after Deno has resolved the npm
+package.
 
 Project scripts are delegated to npm, pnpm, Yarn, or Bun independently of the
 runtime executing Runpalette. CI installs the packed release into a clean
@@ -16,7 +35,9 @@ and executes it from the selected workspace before a release can pass.
 
 The terminal UI has explicit plain-text, ASCII, no-color, narrow-terminal, and
 non-interactive paths. Linux, macOS, and Windows run the same source, build,
-test, and packed npm-consumer contract in CI.
+test, and packed npm-consumer contract in CI. Bun and Deno support currently
+has Linux CI evidence plus local macOS arm64 verification; broader runtime/host
+matrix evidence will be added without blocking compatible hosts in code.
 
 ## Command sources
 

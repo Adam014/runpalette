@@ -87,3 +87,27 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run build
       - run: bun run scripts/verify-package-manager.mjs ${{ matrix.manager }}
+
+  runtime-compatibility:
+    name: packed runtime · ${{ matrix.runtime }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runtime: [bun, deno]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.3.11
+      - if: matrix.runtime == 'deno'
+        uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: 2.9.6
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+      - run: bun run scripts/verify-runtime.mjs ${{ matrix.runtime }}

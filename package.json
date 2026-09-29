@@ -25,6 +25,8 @@
     "format": "biome check --write .",
     "test": "bun test",
     "test:coverage": "bun test --coverage && bun run scripts/coverage-check.mjs",
+    "verify:runtime:bun": "bun run build && bun run scripts/verify-runtime.mjs bun",
+    "verify:runtime:deno": "bun run build && bun run scripts/verify-runtime.mjs deno",
     "verify": "bun run scripts/verify.mjs",
     "prepack": "bun run build"
   },
