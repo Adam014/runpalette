@@ -4,6 +4,8 @@ All notable changes to Runpalette will be documented in this file.
 
 ## Unreleased
 
+## 0.5.0 - 2026-09-29
+
 - Add `runpalette doctor` with human and versioned JSON reports for project,
   catalog, package-manager, configuration, and command-source readiness.
 - Return a blocking exit status only when the discovered command surface is
