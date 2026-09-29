@@ -32,11 +32,12 @@ array, and project working directory stay the same.
 | `list_commands` | none | Return the normalized catalog; optionally filter by group, workspace, or source |
 | `plan_command` | none | Resolve a name or alias to its exact executable, arguments, cwd, source, safety policy, and requirement readiness |
 
-All three tools return structured, schema-versioned content. `check_project`
-also declares an MCP output schema and reports stale configuration selectors as
-warnings without requiring a config file for zero-config projects. Paths are
+All three tools declare input and output schemas and return structured,
+schema-versioned content. `check_project` reports stale configuration selectors
+as warnings without requiring a config file for zero-config projects. Paths are
 relative to the selected project where possible, so results remain useful
-without exposing an absolute local directory layout.
+without exposing an absolute local directory layout. The compatibility promise
+for these schemas is documented in [Stability and versioning](./stability.md).
 
 ## Opt-in execution
 

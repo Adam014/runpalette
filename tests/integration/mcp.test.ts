@@ -46,7 +46,7 @@ describe("Runpalette MCP bridge", () => {
     ]);
     expect(listed.tools[0]?.annotations?.readOnlyHint).toBe(true);
     expect(listed.tools[0]?.annotations?.openWorldHint).toBe(false);
-    expect(listed.tools[0]?.outputSchema).toBeDefined();
+    expect(listed.tools.every(({ outputSchema }) => outputSchema !== undefined)).toBe(true);
 
     const checked = await client.callTool({ name: "check_project", arguments: {} });
     expect(checked.isError).not.toBe(true);
@@ -136,6 +136,7 @@ describe("Runpalette MCP bridge", () => {
     const client = await connect(root, true);
     const listed = await client.listTools();
     expect(listed.tools.map(({ name }) => name)).toContain("run_command");
+    expect(listed.tools.find(({ name }) => name === "run_command")?.outputSchema).toBeDefined();
     expect(
       listed.tools.find(({ name }) => name === "run_command")?.annotations?.destructiveHint,
     ).toBe(true);

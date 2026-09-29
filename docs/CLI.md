@@ -210,7 +210,8 @@ requirements.
 
 `--json` implies non-interactive mode and writes one JSON object to stdout.
 Diagnostics remain on stderr. Every result includes a `schemaVersion` and an
-explicit `ok` value.
+explicit `ok` value. See [Stability and versioning](./stability.md) for the 1.x
+machine contract and exit-code guarantees.
 
 Help and version queries follow the same envelope when `--json` is present:
 

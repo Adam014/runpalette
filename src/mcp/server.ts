@@ -12,6 +12,12 @@ import { assertPlanReady } from "../core/requirements.js";
 import { catalogWarnings, loadCatalog } from "../core/service.js";
 import { packageVersion } from "../core/version.js";
 import { executeCaptured } from "../process/capture.js";
+import {
+  checkProjectOutput,
+  listCommandsOutput,
+  planCommandOutput,
+  runCommandOutput,
+} from "./schemas.js";
 
 interface McpOptions {
   cwd: string;
@@ -48,71 +54,6 @@ function errorResult(error: unknown) {
     isError: true,
   };
 }
-
-const checkProjectOutput = z.object({
-  schemaVersion: z.literal(1),
-  ok: z.boolean(),
-  status: z.enum(["ready", "warning", "error"]),
-  doctor: z.object({
-    schemaVersion: z.literal(1),
-    status: z.enum(["ready", "warning", "error"]),
-    project: z.object({
-      name: z.string(),
-      root: z.string(),
-      manifestPath: z.string().optional(),
-      workspaceCount: z.number().int().nonnegative(),
-    }),
-    packageManager: z
-      .object({
-        name: z.enum(["npm", "pnpm", "yarn", "bun"]),
-        evidence: z.object({ source: z.string(), detail: z.string() }),
-        warnings: z.array(z.string()),
-      })
-      .optional(),
-    configuration: z.object({
-      mode: z.enum(["zero-config", "file"]),
-      path: z.string().optional(),
-    }),
-    summary: z.object({
-      commands: z.number().int().nonnegative(),
-      workspaces: z.number().int().nonnegative(),
-      hidden: z.number().int().nonnegative(),
-      protected: z.number().int().nonnegative(),
-      ambiguousNames: z.number().int().nonnegative(),
-      unavailable: z.number().int().nonnegative(),
-    }),
-    sources: z.array(
-      z.object({ kind: z.enum(COMMAND_SOURCES), commands: z.number().int().nonnegative() }),
-    ),
-    checks: z.array(
-      z.object({
-        id: z.string(),
-        status: z.enum(["pass", "warning", "fail"]),
-        label: z.string(),
-        detail: z.string(),
-        hint: z.string().optional(),
-      }),
-    ),
-  }),
-  configuration: z
-    .object({
-      schemaVersion: z.literal(1),
-      status: z.enum(["valid", "warning"]),
-      path: z.string(),
-      configured: z.object({
-        commands: z.number().int().nonnegative(),
-        groups: z.number().int().nonnegative(),
-        default: z.boolean(),
-      }),
-      discovered: z.object({
-        runnableCommands: z.number().int().nonnegative(),
-        workspaces: z.number().int().nonnegative(),
-      }),
-      unmatchedSelectors: z.array(z.string()),
-    })
-    .nullable(),
-  warnings: z.array(z.string()),
-});
 
 async function catalogFor(
   options: McpOptions,
@@ -200,6 +141,7 @@ export function createMcpServer(options: McpOptions): McpServer {
       description:
         "Return Runpalette's normalized, versioned command catalog with exact source and safety metadata.",
       inputSchema: z.object(filters),
+      outputSchema: listCommandsOutput,
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
@@ -238,6 +180,7 @@ export function createMcpServer(options: McpOptions): McpServer {
       description:
         "Resolve one command to its exact executable, argument array, cwd, source, and safety policy without running it.",
       inputSchema: planInput,
+      outputSchema: planCommandOutput,
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
@@ -271,6 +214,7 @@ export function createMcpServer(options: McpOptions): McpServer {
           confirmed: z.boolean().default(false),
           timeoutMs: z.number().int().min(1_000).max(120_000).default(30_000),
         }),
+        outputSchema: runCommandOutput,
         annotations: {
           readOnlyHint: false,
           destructiveHint: true,
