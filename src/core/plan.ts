@@ -2,6 +2,7 @@ import { relative } from "node:path";
 import { commandMatchesWorkspace } from "./catalog.js";
 import { RunpaletteError } from "./errors.js";
 import type { CatalogCommand, CommandCatalog, ExecutionPlan } from "./model.js";
+import { evaluateRequirements } from "./requirements.js";
 
 function distance(left: string, right: string): number {
   const previous = Array.from({ length: right.length + 1 }, (_, index) => index);
@@ -74,6 +75,8 @@ export function createExecutionPlan(
     script: { name: command.name, value: command.script, requestedAs: scriptName },
     workspace: command.workspace,
     safety: command.safety,
+    requirements: command.requirements,
+    readiness: evaluateRequirements(command.requirements),
     source: command.source,
     ...(catalog.packageManager === undefined
       ? {}

@@ -12,6 +12,7 @@ function command(name: string, script = name): CatalogCommand {
     group: "other",
     order: 0,
     safety: { confirmationRequired: false },
+    requirements: { environment: [], executables: [] },
     workspace: { name: "project", path: ".", root: "/project", isRoot: true },
     source: { kind: "package", path: "/project/package.json" },
     execution: { executable: "npm", args: ["run", name], forwardedArgsSeparator: "--" },

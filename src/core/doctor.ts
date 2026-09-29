@@ -2,6 +2,7 @@ import { relative } from "node:path";
 import { executableAvailable } from "../process/executable.js";
 import type { RunpaletteConfig } from "./config.js";
 import type { CommandCatalog, CommandSourceKind } from "./model.js";
+import { evaluateRequirements } from "./requirements.js";
 
 export type DoctorCheckStatus = "pass" | "warning" | "fail";
 
@@ -28,6 +29,7 @@ export interface DoctorReport {
     hidden: number;
     protected: number;
     ambiguousNames: number;
+    unavailable: number;
   };
   sources: Array<{ kind: CommandSourceKind; commands: number }>;
   checks: DoctorCheck[];
@@ -115,6 +117,20 @@ export function createDoctorReport(
     });
   }
 
+  const unavailable = catalog.commands
+    .map((command) => ({ command, readiness: evaluateRequirements(command.requirements) }))
+    .filter(({ readiness }) => !readiness.ready);
+  if (unavailable.length > 0) {
+    const names = unavailable.slice(0, 3).map(({ command }) => command.name);
+    checks.push({
+      id: "command-requirements",
+      status: "warning",
+      label: "Command requirements",
+      detail: `${String(unavailable.length)} command${unavailable.length === 1 ? " is" : "s are"} unavailable in the current environment: ${names.join(", ")}${unavailable.length > names.length ? ", …" : ""}.`,
+      hint: "Inspect a command with `runpalette run NAME --dry-run` for its missing requirements.",
+    });
+  }
+
   const counts = new Map<CommandSourceKind, number>();
   const names = new Map<string, number>();
   for (const command of catalog.commands) {
@@ -135,6 +151,7 @@ export function createDoctorReport(
       hidden: catalog.hidden.length,
       protected: catalog.commands.filter((command) => command.safety.confirmationRequired).length,
       ambiguousNames: [...names.values()].filter((count) => count > 1).length,
+      unavailable: unavailable.length,
     },
     sources: [...counts.entries()].map(([kind, commands]) => ({ kind, commands })),
     checks,

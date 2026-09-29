@@ -8,6 +8,7 @@ import { RunpaletteError } from "../core/errors.js";
 import type { PackageManagerName } from "../core/model.js";
 import { COMMAND_SOURCES } from "../core/model.js";
 import { createExecutionPlan, planForOutput } from "../core/plan.js";
+import { assertPlanReady } from "../core/requirements.js";
 import { catalogWarnings, loadCatalog } from "../core/service.js";
 import { packageVersion } from "../core/version.js";
 import { executeCaptured } from "../process/capture.js";
@@ -78,6 +79,7 @@ const checkProjectOutput = z.object({
       hidden: z.number().int().nonnegative(),
       protected: z.number().int().nonnegative(),
       ambiguousNames: z.number().int().nonnegative(),
+      unavailable: z.number().int().nonnegative(),
     }),
     sources: z.array(
       z.object({ kind: z.enum(COMMAND_SOURCES), commands: z.number().int().nonnegative() }),
@@ -280,6 +282,7 @@ export function createMcpServer(options: McpOptions): McpServer {
         try {
           const { complete } = await catalogFor(options, {});
           const plan = createExecutionPlan(complete, name, args, workspace, source);
+          assertPlanReady(plan);
           if (plan.safety.confirmationRequired && !confirmed) {
             throw new RunpaletteError(
               "CONFIRMATION_REQUIRED",

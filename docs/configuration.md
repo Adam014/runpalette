@@ -55,7 +55,11 @@ Then add only the metadata the team needs:
     },
     "release": {
       "group": "shipping",
-      "confirm": "This publishes the package to the public registry."
+      "confirm": "This publishes the package to the public registry.",
+      "requires": {
+        "environment": ["NPM_TOKEN"],
+        "executables": ["npm"]
+      }
     },
     "internal:fixture": {
       "hidden": true
@@ -78,6 +82,8 @@ policy never degrades silently into a different command surface.
 | `hidden` | boolean | Removes the command from discovery and direct Runpalette execution |
 | `aliases` | unique string array | Adds stable alternative names for direct execution and defaults |
 | `confirm` | boolean or string | Requires approval; a string becomes the warning shown to the user |
+| `requires.environment` | unique string array | Environment variable names that must be present before execution |
+| `requires.executables` | unique string array | External executables that must be available on `PATH` before execution |
 
 Built-in group IDs are `develop`, `quality`, `build`, `operations`, and
 `other`. Custom group IDs use lowercase letters, numbers, dots, underscores,
@@ -107,7 +113,8 @@ monorepo, qualify an ambiguous default as `workspace#script`:
 ```
 
 A workspace override inherits unspecified fields from the general script
-entry. Selectors accept either the package name or its root-relative path.
+entry, including individual `requires` arrays. Selectors accept either the
+package name or its root-relative path.
 
 General command metadata also applies to matching names discovered from
 non-package sources. If the same name exists in multiple sources, keep the
@@ -127,6 +134,27 @@ runpalette run release --non-interactive --yes
 
 `--yes` approves only the configured Runpalette confirmation. It does not alter
 prompts or safety behavior implemented by the underlying project command.
+
+## Command requirements
+
+Requirements are explicit preflight checks, not values managed by Runpalette.
+The tool checks whether each named environment variable exists and whether each
+executable resolves from the current `PATH`. It never reads requirement values
+into output, loads `.env` files, installs tools, or infers requirements from a
+command string.
+
+Review readiness without running the command:
+
+```bash
+runpalette run release --dry-run
+runpalette run release --dry-run --json
+```
+
+Human plans identify missing names; JSON and MCP plans return `requirements`
+and `readiness` objects. Actual terminal, JSON, and MCP execution fails before
+launch with `COMMAND_REQUIREMENTS_UNMET` when an explicit prerequisite is
+missing. An empty environment value counts as present, matching ordinary
+process-environment semantics.
 
 ## Alternate configuration files
 

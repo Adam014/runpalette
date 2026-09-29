@@ -81,6 +81,17 @@ export interface CommandSafety {
   message?: string;
 }
 
+export interface CommandRequirements {
+  environment: string[];
+  executables: string[];
+}
+
+export interface CommandReadiness {
+  ready: boolean;
+  missingEnvironment: string[];
+  missingExecutables: string[];
+}
+
 export interface CommandWorkspace {
   name: string;
   path: string;
@@ -98,6 +109,7 @@ export interface CatalogCommand {
   group: CommandGroupId;
   order: number;
   safety: CommandSafety;
+  requirements: CommandRequirements;
   workspace: CommandWorkspace;
   source: {
     kind: CommandSourceKind;
@@ -147,6 +159,8 @@ export interface ExecutionPlan {
   };
   workspace: CommandWorkspace;
   safety: CommandSafety;
+  requirements: CommandRequirements;
+  readiness: CommandReadiness;
   source: CatalogCommand["source"];
   packageManager?: PackageManagerName;
   executable: string;

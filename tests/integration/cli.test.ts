@@ -278,6 +278,59 @@ describe("Runpalette CLI", () => {
     expect(approved.stdout).toContain("published");
   });
 
+  test("explains and blocks commands with unmet declared requirements", async () => {
+    const root = await createProject({
+      manifest: {
+        name: "requirements-app",
+        packageManager: "npm@11",
+        scripts: { deploy: "node -e \"console.log('should-not-run')\"" },
+      },
+      files: {
+        "runpalette.json": JSON.stringify({
+          schemaVersion: 1,
+          commands: {
+            deploy: {
+              requires: {
+                environment: ["RUNPALETTE_TEST_MISSING_ENV"],
+                executables: ["runpalette-test-missing-executable"],
+              },
+            },
+          },
+        }),
+      },
+    });
+    temporaryProjects.push(root);
+
+    const planned = run(["run", "deploy", "--cwd", root, "--dry-run", "--json"]);
+    expect(JSON.parse(planned.stdout).data).toMatchObject({
+      readiness: {
+        ready: false,
+        missingEnvironment: ["RUNPALETTE_TEST_MISSING_ENV"],
+        missingExecutables: ["runpalette-test-missing-executable"],
+      },
+    });
+
+    const blocked = run(["run", "deploy", "--cwd", root, "--non-interactive"]);
+    expect(blocked.exitCode).toBe(2);
+    expect(blocked.stderr).toContain('Command "deploy" is not ready');
+    expect(blocked.stdout).not.toContain("should-not-run");
+
+    await writeFile(
+      join(root, "runpalette.json"),
+      JSON.stringify({
+        schemaVersion: 1,
+        commands: {
+          deploy: {
+            requires: { environment: ["PATH"], executables: [process.execPath] },
+          },
+        },
+      }),
+    );
+    const ready = run(["run", "deploy", "--cwd", root, "--non-interactive"]);
+    expect(ready.exitCode).toBe(0);
+    expect(ready.stdout).toContain("should-not-run");
+  });
+
   test("requires a workspace for ambiguous scripts and executes the selected package", async () => {
     const root = await createProject({
       manifest: {

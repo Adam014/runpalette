@@ -4,6 +4,13 @@ All notable changes to Runpalette will be documented in this file.
 
 ## Unreleased
 
+- Add declarative per-command environment and executable requirements with
+  safe general/workspace inheritance, JSON Schema support, and no secret-value
+  exposure.
+- Expose requirement readiness in terminal, JSON, and MCP plans; summarize
+  unavailable commands in project diagnostics and fail actual execution before
+  launch when an explicit prerequisite is missing.
+
 ## 0.8.0 - 2026-09-29
 
 - Add a read-only `check_project` MCP preflight tool that reuses Runpalette's

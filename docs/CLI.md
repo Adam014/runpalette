@@ -97,9 +97,14 @@ runpalette run build --dry-run --json
 ```
 
 The human dry-run explains the selected command's source, workspace, working
-directory, safety requirement, package manager, and exact delegated command.
-The JSON form exposes the same versioned plan as structured data for agents and
-CI.
+directory, safety policy, declared requirement readiness, package manager, and
+exact delegated command. The JSON form exposes the same versioned plan as
+structured data for agents and CI.
+
+Configured command requirements are evaluated during planning. A dry run stays
+successful and identifies missing environment names or executables; actual
+execution fails with `COMMAND_REQUIREMENTS_UNMET` before the child process is
+started. See [Configuration](./configuration.md#command-requirements).
 
 ## Project and package-manager selection
 

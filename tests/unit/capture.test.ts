@@ -9,6 +9,8 @@ function plan(args: string[], executable = process.execPath): ExecutionPlan {
     script: { name: "fixture", value: "fixture", requestedAs: "fixture" },
     workspace: { name: "fixture", path: ".", root: process.cwd(), isRoot: true },
     safety: { confirmationRequired: false },
+    requirements: { environment: [], executables: [] },
+    readiness: { ready: true, missingEnvironment: [], missingExecutables: [] },
     source: { kind: "package", path: "package.json" },
     executable,
     args,

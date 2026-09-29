@@ -41,7 +41,12 @@ describe("Runpalette configuration", () => {
       groups: { shipping: { label: "Ship safely", order: -5 } },
       commands: {
         dev: { label: "Start app", description: "Open the local app", aliases: ["serve"] },
-        release: { group: "shipping", order: 1, confirm: "This publishes the package." },
+        release: {
+          group: "shipping",
+          order: 1,
+          confirm: "This publishes the package.",
+          requires: { environment: ["NPM_TOKEN"], executables: ["npm"] },
+        },
         secret: { hidden: true },
       },
     });
@@ -55,6 +60,10 @@ describe("Runpalette configuration", () => {
     expect(catalog.commands[1]?.safety).toEqual({
       confirmationRequired: true,
       message: "This publishes the package.",
+    });
+    expect(catalog.commands[1]?.requirements).toEqual({
+      environment: ["NPM_TOKEN"],
+      executables: ["npm"],
     });
     expect(catalog.hidden).toContainEqual({ name: "secret", workspace: ".", reason: "config" });
     expect(catalog.defaultCommandId).toBe(catalog.commands[0]?.id);
@@ -89,6 +98,12 @@ describe("Runpalette configuration", () => {
       { schemaVersion: 1, commands: { dev: { aliases: [""] } } },
       { schemaVersion: 1, commands: { dev: { aliases: ["serve", "serve"] } } },
       { schemaVersion: 1, commands: { dev: { confirm: "" } } },
+      { schemaVersion: 1, commands: { dev: { requires: [] } } },
+      { schemaVersion: 1, commands: { dev: { requires: { environment: "TOKEN" } } } },
+      { schemaVersion: 1, commands: { dev: { requires: { environment: ["A", "A"] } } } },
+      { schemaVersion: 1, commands: { dev: { requires: { environment: ["A=x"] } } } },
+      { schemaVersion: 1, commands: { dev: { requires: { executables: [""] } } } },
+      { schemaVersion: 1, commands: { dev: { requires: { surprise: [] } } } },
       { schemaVersion: 1, commands: { dev: { surprise: true } } },
     ];
     for (const value of invalid) expect(() => parseConfig(value)).toThrow();
@@ -114,8 +129,16 @@ describe("Runpalette configuration", () => {
     const config = parseConfig({
       schemaVersion: 1,
       commands: {
-        test: { label: "Test everything", group: "quality" },
-        "@acme/web#test": { label: "Test web", confirm: true },
+        test: {
+          label: "Test everything",
+          group: "quality",
+          requires: { environment: ["CI"], executables: ["docker"] },
+        },
+        "@acme/web#test": {
+          label: "Test web",
+          confirm: true,
+          requires: { environment: ["WEB_URL"] },
+        },
         "packages/api#test": { description: "Test API" },
       },
     });
@@ -124,6 +147,7 @@ describe("Runpalette configuration", () => {
       label: "Test web",
       group: "quality",
       confirm: true,
+      requires: { environment: ["WEB_URL"], executables: ["docker"] },
     });
     expect(commandConfig(config, "@acme/api", "packages/api", "test")).toMatchObject({
       label: "Test everything",

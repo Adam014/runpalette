@@ -30,7 +30,7 @@ array, and project working directory stay the same.
 | --- | --- | --- |
 | `check_project` | none | Validate project, command-source, package-manager, and optional configuration readiness |
 | `list_commands` | none | Return the normalized catalog; optionally filter by group, workspace, or source |
-| `plan_command` | none | Resolve a name or alias to its exact executable, arguments, cwd, source, and safety policy |
+| `plan_command` | none | Resolve a name or alias to its exact executable, arguments, cwd, source, safety policy, and requirement readiness |
 
 All three tools return structured, schema-versioned content. `check_project`
 also declares an MCP output schema and reports stale configuration selectors as
@@ -65,6 +65,11 @@ state, and per-stream truncation state.
 Commands protected by `runpalette.json` still fail closed. The agent must call
 `plan_command`, present or otherwise obtain the user's approval, and then send
 `confirmed: true` in that specific `run_command` call.
+
+Commands with configured requirements also fail closed before launch when an
+environment name or executable is missing. `plan_command` remains read-only and
+returns both the declaration and evaluated readiness, so the agent can explain
+the blocker without receiving any environment value or attempting execution.
 
 `--allow-execution` grants a capable agent access to project commands running
 with the current user's permissions. Enable it only for trusted clients and

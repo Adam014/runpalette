@@ -40,6 +40,22 @@
           },
           "confirm": {
             "oneOf": [{ "type": "boolean" }, { "type": "string", "minLength": 1 }]
+          },
+          "requires": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "environment": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": { "type": "string", "minLength": 1, "pattern": "^[^=\\u0000]+$" }
+              },
+              "executables": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": { "type": "string", "minLength": 1, "pattern": "^[^\\u0000]+$" }
+              }
+            }
           }
         }
       }
