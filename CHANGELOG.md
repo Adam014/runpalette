@@ -4,6 +4,8 @@ All notable changes to Runpalette will be documented in this file.
 
 ## Unreleased
 
+## 0.8.0 - 2026-09-29
+
 - Add a read-only `check_project` MCP preflight tool that reuses Runpalette's
   doctor and configuration-validation models, exposes a declared structured
   output schema, and reports project readiness before an agent plans work.
