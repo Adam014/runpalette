@@ -11,6 +11,8 @@ describe("shell completion", () => {
     for (const shell of ["bash", "zsh", "fish", "powershell"] as const) {
       expect(generateCompletion(shell)).toContain("runpalette __complete");
       expect(generateCompletion(shell)).toContain("doctor");
+      expect(generateCompletion(shell)).toContain("config");
+      expect(generateCompletion(shell)).toContain("validate");
     }
   });
 

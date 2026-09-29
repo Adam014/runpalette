@@ -3,7 +3,8 @@ import type { CommandCatalog } from "../core/model.js";
 export const COMPLETION_SHELLS = ["bash", "zsh", "fish", "powershell"] as const;
 export type CompletionShell = (typeof COMPLETION_SHELLS)[number];
 
-const TOP_LEVEL = ["list", "doctor", "run", "mcp", "completion"] as const;
+const TOP_LEVEL = ["list", "doctor", "config", "run", "mcp", "completion"] as const;
+const CONFIG_ACTIONS = ["init", "validate"] as const;
 const OPTIONS = [
   "--cwd",
   "--workspace",
@@ -15,6 +16,7 @@ const OPTIONS = [
   "--non-interactive",
   "--dry-run",
   "--yes",
+  "--force",
   "--color",
   "--unicode",
   "--no-color",
@@ -63,6 +65,12 @@ RUNPALETTE_COMMANDS
     done <<'RUNPALETTE_SHELLS'
 ${COMPLETION_SHELLS.join("\n")}
 RUNPALETTE_SHELLS
+  elif [[ "$first" == "config" && COMP_CWORD == 2 ]]; then
+    while IFS= read -r candidate; do
+      [[ "$candidate" == "$current"* ]] && COMPREPLY+=("$candidate")
+    done <<'RUNPALETTE_CONFIG_ACTIONS'
+${CONFIG_ACTIONS.join("\n")}
+RUNPALETTE_CONFIG_ACTIONS
   fi
 }
 complete -F _runpalette_completion runpalette
@@ -84,6 +92,9 @@ _runpalette() {
   elif [[ "\${words[2]}" == "completion" && CURRENT == 3 ]]; then
     values=(${COMPLETION_SHELLS.map((shell) => `'${shell}'`).join(" ")})
     _describe 'shell' values
+  elif [[ "\${words[2]}" == "config" && CURRENT == 3 ]]; then
+    values=(${CONFIG_ACTIONS.map((action) => `'${action}'`).join(" ")})
+    _describe 'config action' values
   else
     _arguments '*:option:(${OPTIONS.map((option) => `'${option}'`).join(" ")})'
   fi
@@ -105,6 +116,7 @@ function fish(): string {
     }),
     "complete -c runpalette -n '__fish_seen_subcommand_from run' -a '(runpalette __complete 2>/dev/null)'",
     `complete -c runpalette -n '__fish_seen_subcommand_from completion' -a '${COMPLETION_SHELLS.join(" ")}'`,
+    `complete -c runpalette -n '__fish_seen_subcommand_from config' -a '${CONFIG_ACTIONS.join(" ")}'`,
   ];
   return `${lines.join("\n")}\n`;
 }
@@ -123,6 +135,8 @@ Register-ArgumentCompleter -Native -CommandName runpalette -ScriptBlock {
     $values = @(& runpalette __complete 2>$null)
   } elseif ($elements[1] -eq 'completion' -and $elements.Count -le 3) {
     $values = @(${COMPLETION_SHELLS.map((shell) => `'${shell}'`).join(", ")})
+  } elseif ($elements[1] -eq 'config' -and $elements.Count -le 3) {
+    $values = @(${CONFIG_ACTIONS.map((action) => `'${action}'`).join(", ")})
   }
   $values |
     Where-Object { $_ -like "$wordToComplete*" } |

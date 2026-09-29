@@ -10,9 +10,34 @@ duplicate command bodies or introduce a second task format.
 
 ## Start a configuration
 
+Create a minimal configuration at the discovered project root:
+
+```bash
+runpalette config init
+```
+
+The generated `$schema` URL is pinned to the installed Runpalette version so
+editors can complete and validate fields against the same contract as the CLI.
+The command refuses to overwrite an existing file. Use `--force` only when
+replacement is deliberate, or `--config PATH` to create an alternate file.
+
+Validate the file against both its schema contract and the repository's
+currently discovered command surface:
+
+```bash
+runpalette config validate
+runpalette config validate --json
+```
+
+A malformed file, conflicting alias, or invalid default fails with exit code
+`2`. Stale command selectors are reported as warnings with exit code `0`: the
+configuration remains usable, but those entries currently affect nothing.
+
+Then add only the metadata the team needs:
+
 ```json
 {
-  "$schema": "./node_modules/runpalette/schema/runpalette.schema.json",
+  "$schema": "https://unpkg.com/runpalette@0.7.0/schema/runpalette.schema.json",
   "schemaVersion": 1,
   "default": "serve",
   "groups": {

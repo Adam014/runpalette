@@ -4,6 +4,8 @@ Usage:
   runpalette                     Open the interactive command palette
   runpalette list                List discovered commands
   runpalette doctor              Validate project command readiness
+  runpalette config init         Create a minimal runpalette.json safely
+  runpalette config validate     Validate configuration against the project
   runpalette run NAME [-- ARGS]  Run one project command
   runpalette mcp                 Serve read-only MCP tools over stdio
   runpalette completion SHELL    Generate bash, zsh, fish, or PowerShell completion
@@ -16,6 +18,7 @@ Options:
   --config PATH                 Use an explicit runpalette.json file
   --package-manager NAME         Use npm, pnpm, yarn, or bun
   --allow-execution              Add the opt-in MCP run_command tool
+  --force                        Replace an existing file during config init
   --json                         Emit one machine-readable JSON result
   --non-interactive              Never open a prompt
   --dry-run                      Show the exact execution plan
@@ -34,6 +37,8 @@ Examples:
   runpalette list --json
   runpalette list --source make
   runpalette doctor --json
+  runpalette config init
+  runpalette config validate --json
   runpalette completion zsh
   runpalette run test -- --watch
   runpalette run verify --source make

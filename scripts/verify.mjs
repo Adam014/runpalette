@@ -109,6 +109,26 @@ async function packedArtifact() {
     if (doctor.ok !== true || doctor.command !== "doctor" || doctor.data?.summary?.commands !== 1) {
       throw new Error("Installed CLI doctor returned an unexpected readiness report");
     }
+    const initialized = JSON.parse(
+      run(
+        process.execPath,
+        [join(consumer, "node_modules/runpalette/dist/cli.js"), "config", "init", "--json"],
+        { cwd: consumer },
+      ),
+    );
+    if (initialized.ok !== true || initialized.data?.action !== "init") {
+      throw new Error("Installed CLI did not initialize configuration");
+    }
+    const validated = JSON.parse(
+      run(
+        process.execPath,
+        [join(consumer, "node_modules/runpalette/dist/cli.js"), "config", "validate", "--json"],
+        { cwd: consumer },
+      ),
+    );
+    if (validated.ok !== true || validated.data?.status !== "valid") {
+      throw new Error("Installed CLI did not validate initialized configuration");
+    }
 
     const transport = new StdioClientTransport({
       command: process.execPath,

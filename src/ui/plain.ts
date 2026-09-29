@@ -1,3 +1,4 @@
+import type { ConfigValidationReport } from "../core/config.js";
 import type { DoctorReport } from "../core/doctor.js";
 import type { CommandCatalog, ExecutionPlan } from "../core/model.js";
 import { sanitize, style } from "./style.js";
@@ -96,6 +97,56 @@ export function renderDoctorReport(
     ...(report.summary.protected === 0 ? [] : [`${String(report.summary.protected)} protected`]),
   ];
   lines.push("", `${renderSummary(summary, capabilities)} · ${details.join(" · ")}`);
+  return `${lines.join("\n")}\n`;
+}
+
+export function renderConfigCreated(
+  path: string,
+  projectName: string,
+  capabilities: TerminalCapabilities,
+  explicitPath = false,
+): string {
+  const marker = capabilities.unicode ? "✓" : "OK";
+  const validationCommand = explicitPath
+    ? `runpalette config validate --config ${shellDisplay(path)}`
+    : "runpalette config validate";
+  return `${[
+    style.strong("Runpalette configuration", capabilities),
+    "",
+    `${style.accent(marker, capabilities)} Created ${sanitize(path)} for ${sanitize(projectName)}.`,
+    style.dim("  Existing project commands remain the source of truth.", capabilities),
+    "",
+    `Next  Edit labels, groups, aliases, or confirmations, then run:`,
+    style.strong(`  ${validationCommand}`, capabilities),
+  ].join("\n")}\n`;
+}
+
+export function renderConfigValidation(
+  report: ConfigValidationReport,
+  capabilities: TerminalCapabilities,
+): string {
+  const valid = report.status === "valid";
+  const marker = capabilities.unicode ? (valid ? "✓" : "!") : valid ? "OK" : "!";
+  const renderStatus = valid ? style.accent : style.warning;
+  const lines = [
+    style.strong("Runpalette configuration", capabilities),
+    "",
+    `${renderStatus(marker, capabilities)} ${valid ? "Valid" : "Valid with warnings"}  ${sanitize(report.path)}`,
+    style.dim(
+      `  ${String(report.configured.commands)} configured · ${String(report.discovered.runnableCommands)} runnable · ${String(report.discovered.workspaces)} workspace${report.discovered.workspaces === 1 ? "" : "s"}`,
+      capabilities,
+    ),
+  ];
+  if (!valid) {
+    lines.push("", style.warning("Unmatched command selectors", capabilities));
+    for (const selector of report.unmatchedSelectors) lines.push(`  ${sanitize(selector)}`);
+    lines.push(
+      style.dim(
+        "  Remove stale selectors or add the corresponding project commands.",
+        capabilities,
+      ),
+    );
+  }
   return `${lines.join("\n")}\n`;
 }
 

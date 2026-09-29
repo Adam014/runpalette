@@ -9,6 +9,7 @@ export type CliCommand =
   | "list"
   | "run"
   | "doctor"
+  | "config"
   | "mcp"
   | "completion"
   | "__complete"
@@ -34,6 +35,8 @@ export interface CliArguments {
   unicode: Preference;
   scriptName?: string;
   completionShell?: CompletionShell;
+  configAction?: "init" | "validate";
+  force: boolean;
   scriptArgs: string[];
 }
 
@@ -107,6 +110,7 @@ export function parseArguments(args: readonly string[], processCwd: string): Cli
     dryRun: false,
     yes: false,
     allowExecution: false,
+    force: false,
     color: "auto",
     unicode: "auto",
     scriptArgs: [],
@@ -146,6 +150,10 @@ export function parseArguments(args: readonly string[], processCwd: string): Cli
     }
     if (argument === "--allow-execution") {
       result.allowExecution = true;
+      continue;
+    }
+    if (argument === "--force") {
+      result.force = true;
       continue;
     }
     if (argument.startsWith("--timeout=")) {
@@ -292,6 +300,7 @@ export function parseArguments(args: readonly string[], processCwd: string): Cli
       (argument === "list" ||
         argument === "run" ||
         argument === "doctor" ||
+        argument === "config" ||
         argument === "mcp" ||
         argument === "completion" ||
         argument === "__complete")
@@ -315,6 +324,17 @@ export function parseArguments(args: readonly string[], processCwd: string): Cli
       result.completionShell = argument as CompletionShell;
       continue;
     }
+    if (result.command === "config" && result.configAction === undefined) {
+      if (argument !== "init" && argument !== "validate") {
+        throw new RunpaletteError(
+          "ARGUMENT_INVALID",
+          `Unsupported config action: ${argument}`,
+          "Use `runpalette config init` or `runpalette config validate`.",
+        );
+      }
+      result.configAction = argument;
+      continue;
+    }
     throw new RunpaletteError("ARGUMENT_INVALID", `Unexpected argument: ${argument}`);
   }
 
@@ -330,6 +350,35 @@ export function parseArguments(args: readonly string[], processCwd: string): Cli
       "ARGUMENT_INVALID",
       "Missing shell for `runpalette completion`.",
       `Use one of: ${COMPLETION_SHELLS.join(", ")}.`,
+    );
+  }
+  if (result.command === "config" && result.configAction === undefined) {
+    throw new RunpaletteError(
+      "ARGUMENT_INVALID",
+      "Missing action for `runpalette config`.",
+      "Use `runpalette config init` or `runpalette config validate`.",
+    );
+  }
+  if (result.force && !(result.command === "config" && result.configAction === "init")) {
+    throw new RunpaletteError(
+      "ARGUMENT_INVALID",
+      "--force is only valid with `runpalette config init`.",
+    );
+  }
+  if (
+    result.command === "config" &&
+    (result.workspace !== undefined ||
+      result.group !== undefined ||
+      result.source !== undefined ||
+      result.allowExecution ||
+      result.dryRun ||
+      result.yes ||
+      result.timeoutMs !== undefined ||
+      result.maxOutputBytes !== undefined)
+  ) {
+    throw new RunpaletteError(
+      "ARGUMENT_INVALID",
+      "Filtering and execution options cannot be used with `runpalette config`.",
     );
   }
   if (result.allowExecution && result.command !== "mcp") {

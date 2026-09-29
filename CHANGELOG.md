@@ -4,6 +4,13 @@ All notable changes to Runpalette will be documented in this file.
 
 ## Unreleased
 
+- Add safe `config init` onboarding with an exact-version JSON Schema link,
+  explicit overwrite protection, alternate-path support, and structured JSON
+  output.
+- Add `config validate` for structural and catalog-aware checks, including
+  non-blocking warnings for stale command selectors, plus shell completion and
+  packed runtime coverage for the new workflow.
+
 ## 0.6.0 - 2026-09-29
 
 - Expand the human `run --dry-run` result into a focused command explanation

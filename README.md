@@ -73,6 +73,8 @@ The same package can be installed with `pnpm add -D runpalette`,
 - **Describe your workflows** — add labels, descriptions, aliases, ordering,
   custom groups, defaults, hidden entries, and explicit confirmation without
   replacing the commands your project already owns.
+- **Bootstrap configuration safely** — create a schema-linked team config and
+  validate it against the commands the repository actually exposes.
 - **Show the exact action** — keep the owning source, delegated command, and
   underlying implementation visible while selecting.
 - **Diagnose readiness** — validate command discovery, package-manager
@@ -102,6 +104,8 @@ runpalette list --workspace @acme/web
 runpalette list --group quality
 runpalette list --source make
 runpalette doctor
+runpalette config init
+runpalette config validate
 runpalette completion zsh
 runpalette run test:unit
 runpalette run verify --source make
@@ -120,10 +124,11 @@ stdout, and stderr instead of running inside a simulated console.
 
 [Learn the keyboard and command surface →](./docs/CLI.md)
 
-For an optional team-owned command surface, add a validated
-[`runpalette.json`](./docs/configuration.md). Monorepos require no Runpalette
-configuration; see the [workspace guide](./docs/workspaces.md) for selection and
-ambiguity behavior.
+For an optional team-owned command surface, run `runpalette config init`, edit
+the generated [`runpalette.json`](./docs/configuration.md), then check it with
+`runpalette config validate`. Monorepos require no Runpalette configuration;
+see the [workspace guide](./docs/workspaces.md) for selection and ambiguity
+behavior.
 
 ### For agents and automation
 
