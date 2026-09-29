@@ -4,6 +4,8 @@ All notable changes to Runpalette will be documented in this file.
 
 ## Unreleased
 
+## 0.9.0 - 2026-09-29
+
 - Add declarative per-command environment and executable requirements with
   safe general/workspace inheritance, JSON Schema support, and no secret-value
   exposure.
