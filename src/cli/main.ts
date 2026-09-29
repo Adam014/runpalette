@@ -14,6 +14,7 @@ import { renderDoctorReport, renderPlainCatalog, renderPlan } from "../ui/plain.
 import { style } from "../ui/style.js";
 import { terminalCapabilities } from "../ui/terminal.js";
 import { parseArguments } from "./arguments.js";
+import { completionCandidates, generateCompletion } from "./completion.js";
 import { renderHelp } from "./help.js";
 
 function success(command: string, data: unknown, warnings: readonly string[] = []): string {
@@ -72,6 +73,12 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       process.stdout.write(parsed.json ? success("version", { version }) : `${version}\n`);
       return 0;
     }
+    if (parsed.command === "completion") {
+      if (parsed.completionShell === undefined)
+        throw new Error("Completion shell invariant failed.");
+      process.stdout.write(generateCompletion(parsed.completionShell));
+      return 0;
+    }
     if (parsed.command === "mcp") {
       await runMcpServer({
         cwd: parsed.cwd,
@@ -92,6 +99,11 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
     });
     const completeCatalog = loaded.complete;
     const catalog = parsed.command === "run" ? completeCatalog : loaded.filtered;
+    if (parsed.command === "__complete") {
+      const candidates = completionCandidates(completeCatalog);
+      if (candidates.length > 0) process.stdout.write(`${candidates.join("\n")}\n`);
+      return 0;
+    }
     if (parsed.command === "doctor") {
       const report = createDoctorReport(completeCatalog, loaded.config);
       process.stdout.write(

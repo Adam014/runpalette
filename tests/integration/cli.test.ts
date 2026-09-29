@@ -105,6 +105,18 @@ describe("Runpalette CLI", () => {
     expect(payload.data.project.root).not.toStartWith("/");
   });
 
+  test("generates shell integration and discovers dynamic completion candidates", async () => {
+    const root = await project({ dev: "vite", "test:unit": "vitest" });
+    const generated = run(["completion", "bash"]);
+    const candidates = run(["__complete", "--cwd", root]);
+
+    expect(generated.exitCode).toBe(0);
+    expect(generated.stdout).toContain("_runpalette_completion");
+    expect(generated.stderr).toBe("");
+    expect(candidates).toMatchObject({ exitCode: 0, stderr: "" });
+    expect(candidates.stdout.trim().split("\n")).toEqual(["dev", "test:unit"]);
+  });
+
   test("returns the exact delegated invocation in dry-run JSON", async () => {
     const root = await project({ check: "node check.js" });
     const result = run(["run", "check", "--cwd", root, "--dry-run", "--json", "--", "a b"]);

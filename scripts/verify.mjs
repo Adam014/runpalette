@@ -48,9 +48,11 @@ async function packedArtifact() {
       "README.md",
       "LICENSE",
       "docs/CLI.md",
+      "docs/completions.md",
       "docs/mcp.md",
       "docs/sources.md",
       "dist/cli.js",
+      "dist/cli/completion.js",
       "dist/cli/main.js",
       "dist/core/catalog.js",
       "dist/core/doctor.js",
@@ -88,6 +90,14 @@ async function packedArtifact() {
     );
     if (!help.includes("Open the interactive command palette")) {
       throw new Error("Installed CLI smoke test returned unexpected help output");
+    }
+    const completion = run(
+      process.execPath,
+      [join(consumer, "node_modules/runpalette/dist/cli.js"), "completion", "bash"],
+      { cwd: consumer },
+    );
+    if (!completion.includes("complete -F _runpalette_completion runpalette")) {
+      throw new Error("Installed CLI returned an unexpected Bash completion script");
     }
     const doctor = JSON.parse(
       run(

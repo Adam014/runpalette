@@ -68,6 +68,8 @@ The same package can be installed with `pnpm add -D runpalette`,
   pnpm, Yarn, and Bun monorepos, then run from the selected package directory.
 - **Search immediately** — type any part of a command name or implementation;
   press Tab to focus a group, then use arrows or `Ctrl-N` / `Ctrl-P` to move.
+- **Complete in your shell** — generate Bash, Zsh, Fish, or PowerShell
+  completion with live project command and alias candidates.
 - **Describe your workflows** — add labels, descriptions, aliases, ordering,
   custom groups, defaults, hidden entries, and explicit confirmation without
   replacing the commands your project already owns.
@@ -100,6 +102,7 @@ runpalette list --workspace @acme/web
 runpalette list --group quality
 runpalette list --source make
 runpalette doctor
+runpalette completion zsh
 runpalette run test:unit
 runpalette run verify --source make
 runpalette run dev --workspace @acme/web
@@ -212,6 +215,7 @@ promoted only after the packaged CLI passes their documented test contract.
 | Guide | Start here when you want to… |
 | --- | --- |
 | [CLI guide](./docs/CLI.md) | Diagnose readiness, search, run commands, pass arguments, or use JSON. |
+| [Shell completion](./docs/completions.md) | Complete Runpalette options and current project commands in your shell. |
 | [Command sources](./docs/sources.md) | Understand discovery and native execution for each project tool. |
 | [MCP and agents](./docs/mcp.md) | Connect an agent, inspect plans, or enable bounded execution. |
 | [Configuration](./docs/configuration.md) | Name, group, order, protect, hide, alias, or default commands. |

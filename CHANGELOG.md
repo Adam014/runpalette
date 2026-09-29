@@ -8,6 +8,8 @@ All notable changes to Runpalette will be documented in this file.
   catalog, package-manager, configuration, and command-source readiness.
 - Return a blocking exit status only when the discovered command surface is
   unusable while keeping optional-source warnings automation-friendly.
+- Generate Bash, Zsh, Fish, and PowerShell completion scripts with dynamic
+  candidates from the current project's command names and aliases.
 
 ## 0.4.1 - 2026-09-28
 

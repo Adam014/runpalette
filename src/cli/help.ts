@@ -6,6 +6,7 @@ Usage:
   runpalette doctor              Validate project command readiness
   runpalette run NAME [-- ARGS]  Run one project command
   runpalette mcp                 Serve read-only MCP tools over stdio
+  runpalette completion SHELL    Generate bash, zsh, fish, or PowerShell completion
 
 Options:
   --cwd PATH                     Start project discovery from PATH
@@ -33,6 +34,7 @@ Examples:
   runpalette list --json
   runpalette list --source make
   runpalette doctor --json
+  runpalette completion zsh
   runpalette run test -- --watch
   runpalette run verify --source make
   runpalette run test --workspace @acme/api

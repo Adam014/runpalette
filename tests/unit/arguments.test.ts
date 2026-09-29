@@ -95,6 +95,16 @@ describe("parseArguments", () => {
     expect(() => parseArguments(["doctor", "--dry-run"], "/p")).toThrow("cannot be used");
   });
 
+  test("parses completion generation and protects its stdout contract", () => {
+    expect(parseArguments(["completion", "zsh"], "/p")).toMatchObject({
+      command: "completion",
+      completionShell: "zsh",
+    });
+    expect(() => parseArguments(["completion"], "/p")).toThrow("Missing shell");
+    expect(() => parseArguments(["completion", "nu"], "/p")).toThrow("Unsupported");
+    expect(() => parseArguments(["completion", "bash", "--json"], "/p")).toThrow("cannot be used");
+  });
+
   test("supports every documented shorthand and inline value", () => {
     const parsed = parseArguments(
       [

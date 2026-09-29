@@ -56,6 +56,23 @@ missing selected package manager returns exit code `2`. In JSON mode the same
 state is available as `data.status`; top-level `ok` is `false` for a blocking
 report. Output paths are relative to the invoking directory.
 
+## Enable shell completion
+
+Generate a completion script for Bash, Zsh, Fish, or PowerShell:
+
+```bash
+runpalette completion bash
+runpalette completion zsh
+runpalette completion fish
+runpalette completion powershell
+```
+
+The generated integration completes the Runpalette command surface and reads
+project command names and aliases dynamically when completing `runpalette run`.
+Runpalette only writes the generated script to stdout and never modifies shell
+configuration. See [Shell completion](./completions.md) for temporary and
+persistent installation commands.
+
 ## List and run directly
 
 ```bash
