@@ -4,6 +4,8 @@ All notable changes to Runpalette will be documented in this file.
 
 ## Unreleased
 
+## 1.0.0 - 2026-09-29
+
 - Declare output schemas for every MCP tool and verify the complete structured
   tool surface through real clients and packed runtime contracts.
 - Publish the stable 1.x CLI, configuration, JSON, MCP, and exit-code contract,
