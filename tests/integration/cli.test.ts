@@ -130,6 +130,19 @@ describe("Runpalette CLI", () => {
     expect(payload.data.cwd).not.toStartWith("/");
   });
 
+  test("explains a human dry-run without executing the command", async () => {
+    const root = await project({ release: "node publish.js" });
+    const result = run(["run", "release", "--cwd", root, "--dry-run"]);
+
+    expect(result).toMatchObject({ exitCode: 0, stderr: "" });
+    expect(result.stdout).toContain("Runpalette plan");
+    expect(result.stdout).toContain("Source     package");
+    expect(result.stdout).toContain("Workspace  fixture-app");
+    expect(result.stdout).toContain("Directory");
+    expect(result.stdout).toContain("Safety     no confirmation required");
+    expect(result.stdout).toContain("$ npm run release");
+  });
+
   test("executes through the detected package manager and preserves arguments", async () => {
     const root = await project({
       echoargs: "node -e \"console.log(process.argv.slice(1).join('|'))\"",

@@ -103,6 +103,36 @@ export function renderPlan(plan: ExecutionPlan): string {
   return `$ ${[plan.executable, ...plan.args].map(shellDisplay).join(" ")}\n`;
 }
 
+export function renderPlanDetails(plan: ExecutionPlan, capabilities: TerminalCapabilities): string {
+  const separator = capabilities.unicode ? " · " : " | ";
+  const requestedAs =
+    plan.script.requestedAs === plan.script.name
+      ? ""
+      : `${separator}requested as ${sanitize(plan.script.requestedAs)}`;
+  const safety = plan.safety.confirmationRequired
+    ? [
+        "confirmation required",
+        ...(plan.safety.message === undefined ? [] : [sanitize(plan.safety.message)]),
+      ].join(separator)
+    : "no confirmation required";
+  const rows = [
+    ["Command", `${sanitize(plan.script.name)}${requestedAs}`],
+    ["Source", `${sanitize(plan.source.kind)}${separator}${sanitize(plan.source.path)}`],
+    ["Workspace", `${sanitize(plan.workspace.name)}${separator}${sanitize(plan.workspace.path)}`],
+    ["Directory", sanitize(plan.cwd)],
+    ["Safety", safety],
+    ...(plan.packageManager === undefined
+      ? []
+      : [["Manager", sanitize(plan.packageManager)] as const]),
+  ];
+  const lines = [style.strong("Runpalette plan", capabilities), ""];
+  for (const [label, value] of rows) {
+    lines.push(`${style.dim(label.padEnd(10), capabilities)} ${value}`);
+  }
+  lines.push("", style.strong("Executes", capabilities), `  ${renderPlan(plan).trimEnd()}`);
+  return `${lines.join("\n")}\n`;
+}
+
 function shellDisplay(value: string): string {
   const clean = sanitize(value);
   return /^[a-zA-Z0-9_./:@=-]+$/u.test(clean) ? clean : JSON.stringify(clean);
