@@ -4,6 +4,10 @@ All notable changes to Runpalette will be documented in this file.
 
 ## Unreleased
 
+- Make repeated Gradle command discovery substantially faster by respecting
+  Gradle's standard project daemon policy instead of forcing a disposable JVM
+  for every catalog load.
+
 ## 0.5.0 - 2026-09-29
 
 - Add `runpalette doctor` with human and versioned JSON reports for project,

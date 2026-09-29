@@ -41,6 +41,11 @@ command. If that executable is missing or metadata discovery fails, Runpalette
 prints an actionable diagnostic and keeps commands from all other sources
 available. Gradle prefers the project wrapper when present.
 
+Gradle discovery follows the project's normal daemon policy instead of forcing
+a disposable JVM for every palette opening. Runpalette still disables build
+scan publication and requests quiet, plain task metadata. Projects that disable
+the daemon in `gradle.properties` keep that choice.
+
 Make and Cargo alias discovery are static. Reading a Makefile never runs Make.
 
 ## Trust boundary
