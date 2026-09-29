@@ -28,12 +28,15 @@ array, and project working directory stay the same.
 
 | Tool | Side effects | Purpose |
 | --- | --- | --- |
+| `check_project` | none | Validate project, command-source, package-manager, and optional configuration readiness |
 | `list_commands` | none | Return the normalized catalog; optionally filter by group, workspace, or source |
 | `plan_command` | none | Resolve a name or alias to its exact executable, arguments, cwd, source, and safety policy |
 
-Both tools return structured, schema-versioned content. Paths are relative to
-the selected project where possible, so results are useful without exposing an
-absolute local directory layout.
+All three tools return structured, schema-versioned content. `check_project`
+also declares an MCP output schema and reports stale configuration selectors as
+warnings without requiring a config file for zero-config projects. Paths are
+relative to the selected project where possible, so results remain useful
+without exposing an absolute local directory layout.
 
 ## Opt-in execution
 
@@ -70,11 +73,12 @@ shell text; the requested name must resolve to the discovered catalog.
 
 ## Recommended agent flow
 
-1. Call `list_commands` with a focused group or source when appropriate.
-2. Call `plan_command` for the selected name and arguments.
-3. Inspect the source, working directory, exact argument array, and safety
+1. Call `check_project` and resolve blockers before attempting work.
+2. Call `list_commands` with a focused group or source when appropriate.
+3. Call `plan_command` for the selected name and arguments.
+4. Inspect the source, working directory, exact argument array, and safety
    metadata.
-4. Ask for confirmation when the plan requires it.
-5. Call `run_command` only when execution was enabled intentionally.
-6. Treat a non-zero exit, timeout, cancellation, or truncated output as
+5. Ask for confirmation when the plan requires it.
+6. Call `run_command` only when execution was enabled intentionally.
+7. Treat a non-zero exit, timeout, cancellation, or truncated output as
    explicit state rather than assuming success.

@@ -162,8 +162,9 @@ Or expose the catalog and exact execution plans directly over MCP:
 runpalette mcp
 ```
 
-The MCP server offers `list_commands` and `plan_command` by default.
-`run_command` exists only when the user explicitly starts the server with
+The MCP server offers `check_project`, `list_commands`, and `plan_command` by
+default, so an agent can verify readiness before selecting work. `run_command`
+exists only when the user explicitly starts the server with
 `--allow-execution`; configured confirmations still apply to every call and
 execution is time/output bounded.
 

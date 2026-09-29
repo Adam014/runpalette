@@ -39,8 +39,24 @@ describe("Runpalette MCP bridge", () => {
     const client = await connect(root, false);
 
     const listed = await client.listTools();
-    expect(listed.tools.map(({ name }) => name)).toEqual(["list_commands", "plan_command"]);
+    expect(listed.tools.map(({ name }) => name)).toEqual([
+      "check_project",
+      "list_commands",
+      "plan_command",
+    ]);
     expect(listed.tools[0]?.annotations?.readOnlyHint).toBe(true);
+    expect(listed.tools[0]?.annotations?.openWorldHint).toBe(false);
+    expect(listed.tools[0]?.outputSchema).toBeDefined();
+
+    const checked = await client.callTool({ name: "check_project", arguments: {} });
+    expect(checked.isError).not.toBe(true);
+    expect(checked.structuredContent).toMatchObject({
+      schemaVersion: 1,
+      ok: true,
+      status: "ready",
+      doctor: { summary: { commands: 1 }, configuration: { mode: "zero-config" } },
+      configuration: null,
+    });
 
     const catalogResult = await client.callTool({ name: "list_commands", arguments: {} });
     expect(catalogResult.isError).not.toBe(true);
@@ -57,6 +73,54 @@ describe("Runpalette MCP bridge", () => {
     expect(planResult.structuredContent).toMatchObject({
       ok: true,
       plan: { executable: "npm", args: ["run", "test", "--", "--watch"] },
+    });
+  });
+
+  test("surfaces stale configuration as a read-only project warning", async () => {
+    const root = await createProject({
+      manifest: {
+        name: "mcp-config",
+        packageManager: "npm@11",
+        scripts: { test: "node test.js" },
+      },
+      files: {
+        "runpalette.json": JSON.stringify({
+          schemaVersion: 1,
+          commands: { missing: { label: "Stale command" } },
+        }),
+      },
+    });
+    projects.push(root);
+    const client = await connect(root, false);
+
+    const checked = await client.callTool({ name: "check_project", arguments: {} });
+    expect(checked.isError).not.toBe(true);
+    expect(checked.structuredContent).toMatchObject({
+      ok: true,
+      status: "warning",
+      doctor: { configuration: { mode: "file", path: "runpalette.json" } },
+      configuration: { status: "warning", unmatchedSelectors: ["missing"] },
+    });
+  });
+
+  test("reports project blockers as structured readiness instead of a protocol failure", async () => {
+    const root = await createProject({
+      manifest: { name: "mcp-empty", packageManager: "npm@11", scripts: {} },
+    });
+    projects.push(root);
+    const client = await connect(root, false);
+
+    const checked = await client.callTool({ name: "check_project", arguments: {} });
+    expect(checked.isError).not.toBe(true);
+    expect(checked.structuredContent).toMatchObject({
+      ok: false,
+      status: "error",
+      doctor: {
+        status: "error",
+        checks: expect.arrayContaining([
+          expect.objectContaining({ id: "commands", status: "fail" }),
+        ]),
+      },
     });
   });
 
