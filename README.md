@@ -1,6 +1,9 @@
 <div align="center">
 
-# Runpalette
+<h1>
+  <img src="https://raw.githubusercontent.com/Adam014/runpalette/main/docs/assets/runpalette-logo.png" alt="" width="96" align="absmiddle" />
+  Runpalette
+</h1>
 
 **One command palette for every project — and every coding agent.**
 
@@ -22,7 +25,7 @@ coding agents, and CI.
 [Agents & MCP](#for-agents-and-automation) · [How it works](#one-project-one-command-surface) ·
 [Documentation](#documentation)
 
-<img src="./docs/assets/runpalette-demo.gif" alt="Runpalette discovers project commands, filters them instantly, runs the selected test through pnpm, and returns a machine-readable dry-run plan." width="1120" />
+<img src="./docs/assets/runpalette-demo.gif" alt="Runpalette discovers and searches project commands, unifies workspaces and task sources, previews deterministic execution plans, validates prerequisites, and gives coding agents a bounded MCP command surface." width="1120" />
 
 </div>
 
