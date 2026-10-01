@@ -4,6 +4,14 @@ All notable changes to Runpalette will be documented in this file.
 
 ## Unreleased
 
+## 1.0.1 - 2026-10-01
+
+- Introduce a distinct liquid-glass Runpalette identity and integrate the new
+  project mark into the public README.
+- Replace the short terminal demo with a 30 FPS launch walkthrough covering
+  command discovery and search, workspaces and task sources, deterministic
+  dry-run plans, readiness diagnostics, and the bounded MCP surface.
+
 ## 1.0.0 - 2026-09-29
 
 - Declare output schemas for every MCP tool and verify the complete structured
