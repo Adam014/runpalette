@@ -1,6 +1,6 @@
 {
   "name": "runpalette",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A project command palette for discovering and running the right script.",
   "type": "module",
   "bin": {
@@ -65,6 +65,7 @@
     "url": "https://github.com/Adam014/runpalette/issues"
   },
   "homepage": "https://github.com/Adam014/runpalette#readme",
+  "funding": "https://github.com/sponsors/Adam014",
   "devDependencies": {
     "@biomejs/biome": "2.5.12",
     "@modelcontextprotocol/client": "2.1.0",

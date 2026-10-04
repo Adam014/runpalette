@@ -21,6 +21,8 @@ coding agents, and CI.
 [![Cross-platform](https://img.shields.io/badge/process_launch-hardened-22c55e)](./COMPATIBILITY.md)
 [![License](https://img.shields.io/badge/license-MIT-64748b)](./LICENSE)
 
+[![Sponsor Runpalette](https://img.shields.io/badge/Sponsor-Runpalette-EA4AAA?style=for-the-badge&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/Adam014)
+
 [Quick start](#quick-start) · [What it does](#what-runpalette-does) ·
 [Agents & MCP](#for-agents-and-automation) · [How it works](#one-project-one-command-surface) ·
 [Documentation](#documentation)
@@ -246,6 +248,14 @@ MCP checks under each.
 | [Security](./SECURITY.md) | Report a vulnerability privately and review the support policy. |
 
 Run `runpalette --help` for the complete command and option reference.
+
+## Sponsors
+
+Runpalette is independently developed and maintained. Sponsorship helps fund
+compatibility testing, CI, documentation, maintenance, and dependable releases
+across supported project tools and runtimes.
+
+[Sponsor Runpalette and my open-source work →](https://github.com/sponsors/Adam014)
 
 ## Project
 
