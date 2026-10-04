@@ -4,6 +4,13 @@ All notable changes to Runpalette will be documented in this file.
 
 ## Unreleased
 
+## 1.0.2 - 2026-10-04
+
+- Add GitHub Sponsors repository metadata and npm funding metadata so users can
+  discover the supported funding path from GitHub and `npm fund`.
+- Surface a dedicated Sponsor action directly below the technical badges on
+  the GitHub and npm landing pages while retaining the detailed section below.
+
 ## 1.0.1 - 2026-10-01
 
 - Introduce a distinct liquid-glass Runpalette identity and integrate the new
