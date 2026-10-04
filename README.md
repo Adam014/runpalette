@@ -247,6 +247,14 @@ MCP checks under each.
 
 Run `runpalette --help` for the complete command and option reference.
 
+## Sponsors
+
+Runpalette is independently developed and maintained. Sponsorship helps fund
+compatibility testing, CI, documentation, maintenance, and dependable releases
+across supported project tools and runtimes.
+
+[Sponsor Runpalette and my open-source work →](https://github.com/sponsors/Adam014)
+
 ## Project
 
 [Changelog](./CHANGELOG.md) · [Contributing](./CONTRIBUTING.md) ·
