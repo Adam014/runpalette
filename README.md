@@ -21,6 +21,8 @@ coding agents, and CI.
 [![Cross-platform](https://img.shields.io/badge/process_launch-hardened-22c55e)](./COMPATIBILITY.md)
 [![License](https://img.shields.io/badge/license-MIT-64748b)](./LICENSE)
 
+[![Sponsor Runpalette](https://img.shields.io/badge/Sponsor-Runpalette-EA4AAA?style=for-the-badge&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/Adam014)
+
 [Quick start](#quick-start) · [What it does](#what-runpalette-does) ·
 [Agents & MCP](#for-agents-and-automation) · [How it works](#one-project-one-command-surface) ·
 [Documentation](#documentation)
