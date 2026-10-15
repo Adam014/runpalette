@@ -1,50 +1,39 @@
-<div align="center">
+# Runpalette
 
-<h1>
-  <img src="https://raw.githubusercontent.com/Adam014/runpalette/main/docs/assets/runpalette-logo.png" alt="" width="96" align="absmiddle" />
-  Runpalette
-</h1>
+<img src="https://raw.githubusercontent.com/Adam014/runpalette/main/docs/assets/runpalette-logo.png" width="96" height="96" alt="" align="right" />
 
-**One command palette for every project — and every coding agent.**
-
-Turn package scripts, Justfiles, Taskfiles, Make targets, Cargo aliases, and
-Gradle tasks into one searchable, MCP-native command surface for developers,
-coding agents, and CI.
-
-[![JSON automation](https://img.shields.io/badge/automation-versioned_JSON-0891b2)](./docs/CLI.md#automation-and-agents)
-[![MCP](https://img.shields.io/badge/MCP-native-7c3aed)](./docs/mcp.md)
-[![npm](https://img.shields.io/npm/v/runpalette?label=npm&color=cb3837&logo=npm)](https://www.npmjs.com/package/runpalette)
+[![npm](https://img.shields.io/npm/v/runpalette)](https://www.npmjs.com/package/runpalette)
 [![CI](https://github.com/Adam014/runpalette/actions/workflows/ci.yml/badge.svg)](https://github.com/Adam014/runpalette/actions/workflows/ci.yml)
-[![Coverage](https://codecov.io/gh/Adam014/runpalette/graph/badge.svg)](https://codecov.io/gh/Adam014/runpalette)
-[![Node.js](https://img.shields.io/badge/Node.js-%E2%89%A522-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
-[![Package managers](https://img.shields.io/badge/delegates-npm_%C2%B7_pnpm_%C2%B7_Yarn_%C2%B7_Bun-64748b)](./COMPATIBILITY.md)
-[![Cross-platform](https://img.shields.io/badge/process_launch-hardened-22c55e)](./COMPATIBILITY.md)
-[![License](https://img.shields.io/badge/license-MIT-64748b)](./LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
 
-[Quick start](#quick-start) · [What it does](#what-runpalette-does) ·
-[Agents & MCP](#for-agents-and-automation) · [How it works](#one-project-one-command-surface) ·
-[Documentation](#documentation)
+A searchable list of every command in your project.
 
-<img src="./docs/assets/runpalette-demo.gif" alt="Runpalette discovers and searches project commands, unifies workspaces and task sources, previews deterministic execution plans, validates prerequisites, and gives coding agents a bounded MCP command surface." width="1120" />
+Runpalette reads the commands a project already has (`package.json` scripts,
+`justfile`, `Taskfile`, `Makefile`, Cargo aliases and Gradle tasks), puts them
+in one list, and lets you type to find and run one. It doesn't add a new task
+format. Your package manager or task runner still runs the command.
 
-</div>
+<img src="./docs/assets/runpalette-demo.gif" alt="Runpalette listing and searching project commands" width="800" />
 
-## Quick start
+## Why
 
-Try Runpalette without changing the project:
+Every project keeps its commands somewhere different. One has twenty scripts in
+`package.json`, another has a `Makefile` and a `justfile`, a monorepo has
+scripts spread over ten packages. I kept opening those files just to remember
+what a command was called. Now I type `runpalette`, start typing, and press
+Enter.
 
-```bash
+## Install
+
+You need Node.js 22+. Try it without installing anything:
+
+```sh
 npx runpalette
 ```
 
-Runpalette finds the nearest supported project, discovers the commands it
-already owns, and opens an immediate type-to-search palette. Nothing needs to
-be copied into the target project and Runpalette does not introduce a new task
-format.
+Or add it to the project so the whole team has it:
 
-Install it for the whole team and expose the short project-local command:
-
-```bash
+```sh
 npm install --save-dev runpalette
 ```
 
@@ -56,201 +45,62 @@ npm install --save-dev runpalette
 }
 ```
 
-The same package can be installed with `pnpm add -D runpalette`,
-`yarn add -D runpalette`, or `bun add -d runpalette`.
+Then `npm run what` opens the palette. pnpm, Yarn and Bun work the same way.
 
-## What Runpalette does
+## Usage
 
-- **Find the project** — walk upward from the current directory or an explicit
-  `--cwd` to package, Just, Task, Make, Cargo, or Gradle project metadata.
-- **Unify existing tools** — combine every discovered command into one catalog
-  without replacing the tool that owns execution.
-- **Make commands scannable** — group existing commands into development,
-  quality, build/release, data/operations, and a conservative fallback group.
-- **Understand workspaces** — discover root and package scripts across npm,
-  pnpm, Yarn, and Bun monorepos, then run from the selected package directory.
-- **Search immediately** — type any part of a command name or implementation;
-  press Tab to focus a group, then use arrows or `Ctrl-N` / `Ctrl-P` to move.
-- **Complete in your shell** — generate Bash, Zsh, Fish, or PowerShell
-  completion with live project command and alias candidates.
-- **Describe your workflows** — add labels, descriptions, aliases, ordering,
-  custom groups, defaults, hidden entries, and explicit confirmation without
-  replacing the commands your project already owns.
-- **Check command prerequisites** — declare required environment names and
-  external executables, inspect readiness before launch, and fail early instead
-  of discovering missing setup halfway through a workflow.
-- **Bootstrap configuration safely** — create a schema-linked team config and
-  validate it against the commands the repository actually exposes.
-- **Show the exact action** — keep the owning source, delegated command, and
-  underlying implementation visible while selecting.
-- **Diagnose readiness** — validate command discovery, package-manager
-  availability, configuration, and optional source tooling with one human- or
-  machine-readable check.
-- **Delegate faithfully** — let the original package manager or task tool own
-  local binaries, lifecycle behavior, arguments, and exit codes.
-- **Serve agents and automation** — expose the same catalog and execution
-  plans as versioned JSON, run tasks with bounded structured output, or use
-  read-only-by-default MCP tools.
-
-## Choose how you work
-
-### From your terminal
-
-Open the palette from anywhere inside a project:
-
-```bash
-runpalette
-```
-
-Or skip the interface when you already know the script:
-
-```bash
-runpalette list
-runpalette list --workspace @acme/web
-runpalette list --group quality
-runpalette list --source make
-runpalette doctor
-runpalette config init
-runpalette config validate
-runpalette completion zsh
-runpalette run test:unit
-runpalette run verify --source make
+```sh
+runpalette                              # open the palette
+runpalette list                         # print every command
+runpalette run test -- --watch          # run one, pass extra arguments
+runpalette run build --dry-run          # show exactly what would run
 runpalette run dev --workspace @acme/web
-runpalette run test:unit -- --watch
-runpalette run build --dry-run
+runpalette doctor                       # check what's missing
 ```
 
-The dry-run explains where the command came from, which workspace and directory
-it uses, whether confirmation is required, whether declared prerequisites are
-available, and the exact invocation—without executing project code.
+In the palette, type to search, use the arrow keys to move, Tab to jump between
+groups and Enter to run. Monorepos (npm, pnpm, Yarn and Bun workspaces) work
+without any configuration.
 
-The palette uses an alternate terminal screen and restores the normal terminal
-before the selected task starts. The child then receives ordinary stdin,
-stdout, and stderr instead of running inside a simulated console.
+If you want nicer names, descriptions, aliases or a confirmation before
+`deploy`, run `runpalette config init` and edit the `runpalette.json` it
+creates. See [configuration](./docs/configuration.md).
 
-[Learn the keyboard and command surface →](./docs/CLI.md)
+### For coding agents and CI
 
-For an optional team-owned command surface, run `runpalette config init`, edit
-the generated [`runpalette.json`](./docs/configuration.md), then check it with
-`runpalette config validate`. Monorepos require no Runpalette configuration;
-see the [workspace guide](./docs/workspaces.md) for selection and ambiguity
-behavior.
-
-### For agents and automation
-
-Give a coding agent or CI job a stable inventory instead of asking it to infer
-commands from README prose or execute an unknown shell string:
-
-```bash
+```sh
 runpalette list --json
-runpalette doctor --json
-runpalette run test:e2e --dry-run --json
-runpalette run test:e2e --json --timeout 2m
-```
-
-`--json` implies non-interactive behavior and writes one versioned result to
-stdout. Diagnostics stay on stderr. A dry run returns the exact executable,
-argument array, working directory, selected command, and source choice
-without executing the task.
-
-For CI and agents, actual JSON execution captures stdout and stderr into one
-bounded result while preserving exit status, timing, timeout, cancellation,
-and truncation metadata. Captured execution disables stdin; use human stream
-mode for an interactive task. Human execution keeps the task's native streams:
-
-```bash
-runpalette run verify --non-interactive
-```
-
-Or expose the catalog and exact execution plans directly over MCP:
-
-```bash
+runpalette run test --json --timeout 2m
 runpalette mcp
 ```
 
-The MCP server offers `check_project`, `list_commands`, and `plan_command` by
-default, so an agent can verify readiness before selecting work. `run_command`
-exists only when the user explicitly starts the server with
-`--allow-execution`; configured confirmations still apply to every call and
-execution is time/output bounded. Plans expose declared command requirements;
-execution refuses a command whose required environment names or executables
-are unavailable.
+`--json` gives you one versioned JSON result on stdout and never prompts.
+`runpalette mcp` starts an MCP server, so an agent can see which commands
+exist instead of guessing from the README. By default it can only list and
+plan commands. It can run them only if you start it with `--allow-execution`.
+More in [MCP and agents](./docs/mcp.md).
 
-[Connect a coding agent with MCP →](./docs/mcp.md)
+## What it won't do
 
-## One project. One command surface.
+- It doesn't run your command through a shell. It calls the executable with
+  the arguments directly.
+- It doesn't replace npm, pnpm, `just`, `make` or anything else. They still
+  run the command.
+- It doesn't hide install hooks like `postinstall`. It just keeps them out of
+  the default list.
 
-```text
-start anywhere inside a project
-        ↓
-find the nearest supported project source
-        ↓
-discover commands through source-owned metadata
-        ↓
-normalize and group one source-aware catalog
-        ↓
-search or select one exact command
-        ↓
-preview the execution plan or delegate it unchanged
-```
+## Docs
 
-- Automatic install and publishing hooks stay out of the default palette.
-- Unknown commands remain visible instead of being silently discarded.
-- Conflicting lockfiles produce a warning and deterministic selection.
-- Command names and metadata are sanitized before terminal rendering.
-- No-argument use outside a TTY prints a deterministic plain catalog and never
-  attempts to prompt.
-- `NO_COLOR`, `TERM=dumb`, ASCII rendering, narrow terminals, and explicit
-  non-interactive operation have first-class paths.
+- [CLI guide](./docs/CLI.md)
+- [Command sources](./docs/sources.md)
+- [Configuration](./docs/configuration.md)
+- [Workspaces](./docs/workspaces.md)
+- [MCP and agents](./docs/mcp.md)
+- [Shell completion](./docs/completions.md)
+- [Compatibility](./COMPATIBILITY.md)
 
-## Keep your existing stack
+`runpalette --help` lists every command and option.
 
-| Command sources | Package managers | CLI runtime | Interfaces |
-| --- | --- | --- | --- |
-| package scripts · Just · Task · Make · Cargo aliases · Gradle | npm · pnpm · Yarn · Bun | Node.js 22+ · Bun 1.3 · Deno 2.9 | interactive TTY · text · JSON · MCP |
+## License
 
-Package-manager choice is independent from the runtime executing Runpalette.
-The stable `1.x` release contract covers Node.js, Bun, and Deno only after the
-packed CLI passes discovery, diagnostics, planning, execution, completion, and
-MCP checks under each.
-
-[See current compatibility evidence →](./COMPATIBILITY.md)
-
-## Predictable by default
-
-- Runpalette constructs an executable plus argument array; it does not build a
-  shell command around your selection.
-- The detected project root becomes the task working directory.
-- Source-specific argument separators are added only where required.
-- A missing command or owning executable returns an actionable error.
-- Machine output is schema-versioned, prompt-free, and free of ANSI styling.
-- Marketing media, private product research, fixtures, and development context
-  are excluded from the npm artifact.
-- The packaged-consumer check installs the generated tarball into a clean
-  project and launches the installed CLI before verification can pass.
-
-## Documentation
-
-| Guide | Start here when you want to… |
-| --- | --- |
-| [CLI guide](./docs/CLI.md) | Diagnose readiness, search, run commands, pass arguments, or use JSON. |
-| [Shell completion](./docs/completions.md) | Complete Runpalette options and current project commands in your shell. |
-| [Command sources](./docs/sources.md) | Understand discovery and native execution for each project tool. |
-| [MCP and agents](./docs/mcp.md) | Connect an agent, inspect plans, or enable bounded execution. |
-| [Configuration](./docs/configuration.md) | Name, group, order, protect, hide, alias, or default commands. |
-| [Workspaces](./docs/workspaces.md) | Use Runpalette in npm, pnpm, Yarn, or Bun monorepos. |
-| [Compatibility](./COMPATIBILITY.md) | Check runtimes, package managers, terminals, and support status. |
-| [Stability](./docs/stability.md) | Understand the 1.x CLI, config, JSON, MCP, and exit-code contract. |
-| [Changelog](./CHANGELOG.md) | Review user-visible additions and behavior changes. |
-| [Contributing](./CONTRIBUTING.md) | Set up the repository and prepare a focused change. |
-| [Security](./SECURITY.md) | Report a vulnerability privately and review the support policy. |
-
-Run `runpalette --help` for the complete command and option reference.
-
-## Project
-
-[Changelog](./CHANGELOG.md) · [Contributing](./CONTRIBUTING.md) ·
-[Security](./SECURITY.md) · [CLI guide](./docs/CLI.md) · [MIT License](./LICENSE)
-
-Runpalette is a discovery and launch layer over commands your project already
-owns. It is not another package manager, task format, or build system.
+[MIT](./LICENSE). [Changelog](./CHANGELOG.md) · [Contributing](./CONTRIBUTING.md) · [Security](./SECURITY.md)
