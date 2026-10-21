@@ -4,6 +4,12 @@ All notable changes to Runpalette will be documented in this file.
 
 ## Unreleased
 
+## 1.0.3 - 2026-10-21
+
+- Rewrite the README: shorter, with why the tool exists and what it won't do.
+- Shorten the package description.
+- Remove the funding metadata.
+
 ## 1.0.2 - 2026-10-04
 
 - Add GitHub Sponsors repository metadata and npm funding metadata so users can
